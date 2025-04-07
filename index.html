@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Final Countdown</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⏱️</text></svg>">
+</head>
+<body>
+
+    <header>
+        <h1>⏱️ The Final Countdown</h1>
+        <p>Track upcoming events, big and small.</p>
+    </header>
+
+    <main>
+        <section class="controls">
+            <h2>Add New Countdown</h2>
+            <form id="add-item-form">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="item-name">Event Name:</label>
+                        <input type="text" id="item-name" name="item-name" required placeholder="e.g., Next Season Premiere">
+                    </div>
+                    <div class="form-group">
+                        <label for="item-category">Category:</label>
+                        <input type="text" id="item-category" name="item-category" placeholder="e.g., TV Shows, Holidays">
+                    </div>
+                    <div class="form-group">
+                        <label for="item-date">Date:</label>
+                        <input type="date" id="item-date" name="item-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="item-time">Time:</label>
+                        <input type="time" id="item-time" name="item-time" required>
+                    </div>
+
+                    <div class="form-group form-group-checkbox">
+                        <label for="item-recurring">
+                            <input type="checkbox" id="item-recurring" name="item-recurring"> Recurring Event?
+                        </label>
+                    </div>
+
+                    <div id="recurring-options" style="display: none;">
+                         <div class="form-group">
+                            <label for="item-recurrence-interval">Repeats:</label>
+                            <select id="item-recurrence-interval" name="item-recurrence-interval">
+                                <option value="daily">Daily</option>
+                                <option value="weekly" selected>Weekly</option>
+                                <option value="monthly">Monthly</option>
+                                <option value="yearly">Yearly</option>
+                            </select>
+                        </div>
+                         <div class="form-group">
+                            <label for="item-recurrence-end-date">Until (Optional):</label>
+                            <input type="date" id="item-recurrence-end-date" name="item-recurrence-end-date">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="item-note">Note (Optional):</label>
+                        <textarea id="item-note" name="item-note" rows="2" placeholder="e.g., Watch party at my place!"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="item-link">Link (Optional):</label>
+                        <input type="url" id="item-link" name="item-link" placeholder="e.g., https://www.netflix.com/title/...">
+                    </div>
+                     <div class="form-group">
+                        <label for="item-design">Display Style:</label>
+                        <select id="item-design" name="item-design">
+                            <option value="default" selected>Default</option>
+                            <option value="compact">Compact</option>
+                            <option value="card">Card</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit">Add Countdown</button>
+            </form>
+        </section>
+
+        <section class="list-controls">
+             <h2>Your Countdowns</h2>
+             <div class="filter-export-import">
+                <div class="form-group">
+                    <label for="category-filter">Filter by Category:</label>
+                    <select id="category-filter" name="category-filter">
+                        <option value="all">All Categories</option>
+                        <!-- Options added dynamically -->
+                    </select>
+                </div>
+                <div class="import-export-buttons">
+                     <button id="export-button">Export Data</button>
+                     <button id="import-button">Import Data</button>
+                     <input type="file" id="import-file" accept=".json" style="display: none;">
+                 </div>
+             </div>
+        </section>
+
+        <section id="countdown-list-container">
+            <div id="countdown-list">
+                <!-- Countdown items will be rendered here -->
+                <p class="loading">Loading countdowns...</p>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>Made with TypeScript & ❤️</p>
+    </footer>
+
+    <!-- Load compiled JavaScript -->
+    <!-- Make sure the path matches your `outDir` in tsconfig.json -->
+    <script src="dist/app.js" type="module" defer></script>
+
+</body>
+</html>
