@@ -1,34 +1,39 @@
-import { loadItems, saveItems, exportItems, importItems } from './storage.js'; // Added .js
-import { setupUIEventListeners, renderCountdownList, updateTimers, openModal } from './ui.js'; // Added .js
-import { generateId, calculateNextOccurrence, isRecurrenceFinished } from './utils.js'; // Added .js
+import { loadItems, saveItems, exportItems, importItems } from './storage.js';
+import { setupUIEventListeners, renderCountdownList, updateTimers, openModal, applyTheme } from './ui.js';
+import { generateId, calculateNextOccurrence, isRecurrenceFinished } from './utils.js';
 // --- Application State ---
 let countdownItems = [];
 let timerInterval = null;
+const THEME_STORAGE_KEY = 'finalCountdownTheme'; // Key for saving theme
 // --- Initialization ---
 function initializeApp() {
-    console.log("Initializing Final Countdown App v2.1..."); // Version bump!
+    console.log("Initializing Final Countdown App v2.2 (with theme logs)...");
     countdownItems = loadItems();
     console.log(`Loaded ${countdownItems.length} items.`);
+    // Load and apply saved theme
+    const savedTheme = localStorage.getItem(THEME_STORAGE_KEY) || 'default';
+    // --- DEBUG: Log theme being applied on load ---
+    console.log('Applying saved theme on load:', savedTheme);
+    applyTheme(savedTheme); // Apply theme visually via UI function
     setupUIEventListeners({
         saveItem: handleSaveItem,
-        // ** CHANGED: Pass delete handler **
         deleteItem: handleDeleteItem,
         requestEditItem: handleEditRequest,
         requestCopyItem: handleCopyRequest,
         updateFilter: handleFilterChange,
         exportItems: handleExport,
         importItems: handleImport,
+        themeChanged: handleThemeChange, // Ensure this callback is passed
     });
     renderCountdownList(countdownItems);
     startTimerUpdates();
     checkPastEvents(true);
-    console.log("App initialized.");
+    console.log("App initialized with theme:", savedTheme);
 }
 // --- Core Logic Handlers ---
 function handleSaveItem(formData, editingId) {
     try {
         if (editingId) {
-            // --- Update Existing Item ---
             const itemIndex = countdownItems.findIndex(item => item.id === editingId);
             if (itemIndex === -1)
                 throw new Error("Item to update not found");
@@ -38,7 +43,6 @@ function handleSaveItem(formData, editingId) {
                 updatedItem.recurrenceInterval = undefined;
                 updatedItem.recurrenceEndDate = null;
             }
-            // Recalculate next occurrence if needed
             if (updatedItem.isPast && updatedItem.isRecurring) {
                 const nextDate = getNextValidOccurrence(updatedItem);
                 if (nextDate) {
@@ -53,21 +57,13 @@ function handleSaveItem(formData, editingId) {
             console.log("Updated item:", updatedItem.name);
         }
         else {
-            // --- Add New Item ---
             const newItem = {
-                id: generateId(),
-                name: formData.name,
-                targetDate: new Date(formData.targetDateTime).toISOString(),
-                originalTargetDate: new Date(formData.targetDateTime).toISOString(),
-                isRecurring: formData.isRecurring,
+                id: generateId(), name: formData.name, targetDate: new Date(formData.targetDateTime).toISOString(),
+                originalTargetDate: new Date(formData.targetDateTime).toISOString(), isRecurring: formData.isRecurring,
                 recurrenceInterval: formData.isRecurring ? formData.recurrenceInterval : undefined,
                 recurrenceEndDate: formData.isRecurring && formData.recurrenceEndDate ? new Date(formData.recurrenceEndDate).toISOString() : null,
-                category: formData.category,
-                note: formData.note,
-                link: formData.link,
-                design: formData.design,
-                createdAt: new Date().toISOString(),
-                isPast: new Date(formData.targetDateTime) < new Date()
+                category: formData.category, note: formData.note, link: formData.link, design: formData.design,
+                createdAt: new Date().toISOString(), isPast: new Date(formData.targetDateTime) < new Date()
             };
             if (newItem.isPast && newItem.isRecurring) {
                 const nextDate = getNextValidOccurrence(newItem);
@@ -83,60 +79,42 @@ function handleSaveItem(formData, editingId) {
             console.log("Added new item:", newItem.name);
         }
         saveItems(countdownItems);
-        renderCountdownList(countdownItems); // Re-render
+        renderCountdownList(countdownItems);
     }
     catch (e) {
         console.error("Error saving item:", e);
-        alert(`An error occurred while saving: ${e instanceof Error ? e.message : 'Unknown error'}`);
+        alert(`Error saving: ${e instanceof Error ? e.message : 'Unknown'}`);
     }
 }
 function handleEditRequest(id) {
-    console.log("Requesting edit for item:", id);
     const item = countdownItems.find(i => i.id === id);
-    if (item) {
+    if (item)
         openModal('edit', id, item);
-    }
-    else {
-        console.error("Item not found for edit:", id);
-        alert("Could not find the selected item to edit.");
-    }
+    else
+        alert("Error: Item not found for editing.");
 }
 function handleCopyRequest(id) {
-    console.log("Requesting copy for item:", id);
     const item = countdownItems.find(i => i.id === id);
-    if (item) {
+    if (item)
         openModal('add', undefined, item);
-    }
-    else {
-        console.error("Item not found for copy:", id);
-        alert("Could not find the selected item to copy.");
-    }
+    else
+        alert("Error: Item not found for copying.");
 }
-// ** NEW Delete Handler **
 function handleDeleteItem(id) {
     const itemIndex = countdownItems.findIndex(item => item.id === id);
     if (itemIndex === -1) {
-        console.error("Item to delete not found:", id);
-        alert("Error: Could not find the item to delete.");
+        alert("Error: Item not found for deletion.");
         return;
     }
     const itemToDelete = countdownItems[itemIndex];
-    // Ask for confirmation
-    const confirmed = confirm(`Are you sure you want to delete "${itemToDelete.name}"?`);
-    if (confirmed) {
-        countdownItems.splice(itemIndex, 1); // Remove item from array
-        saveItems(countdownItems); // Save updated array
-        renderCountdownList(countdownItems); // Re-render the list
-        console.log("Deleted item:", id, itemToDelete.name);
-        // Optional: Add a success notification/toast later
-    }
-    else {
-        console.log("Deletion cancelled for item:", id);
+    if (confirm(`Are you sure you want to delete "${itemToDelete.name}"?`)) {
+        countdownItems.splice(itemIndex, 1);
+        saveItems(countdownItems);
+        renderCountdownList(countdownItems);
+        console.log("Deleted item:", id);
     }
 }
-// ** REMOVED handleDismissItem ** (Replaced by handleDeleteItem)
 function handleFilterChange(newFilter) {
-    console.log("Filter changed to:", newFilter);
     renderCountdownList(countdownItems);
 }
 function handleExport() {
@@ -145,32 +123,39 @@ function handleExport() {
         return;
     }
     exportItems(countdownItems);
-    console.log("Exporting items...");
 }
 function handleImport(file) {
-    console.log("Attempting to import file:", file.name);
     importItems(file, (importedItems) => {
         if (importedItems.length === 0 && file.size > 0) {
-            alert("Import finished, but no valid countdown items were found in the file.");
+            alert("Import Warning: No valid items found in file.");
             return;
         }
         if (importedItems.length === 0 && file.size === 0) {
-            alert("Import failed: The selected file appears to be empty.");
+            alert("Import failed: File is empty.");
             return;
         }
-        const replace = confirm(`Import ${importedItems.length} item(s)? This will REPLACE your current list.`);
-        if (replace) {
+        if (confirm(`Import ${importedItems.length} item(s)? This will REPLACE your current list.`)) {
             countdownItems = importedItems;
             checkPastEvents(true);
             saveItems(countdownItems);
-            // renderCountdownList usually called by checkPastEvents if changes occur
-            console.log("Import successful. Items replaced.");
             alert("Import successful!");
         }
-        else {
-            console.log("Import cancelled by user.");
-        }
     });
+}
+// ** Handler for Theme Change **
+function handleThemeChange(newTheme) {
+    // --- DEBUG: Confirm theme change handler is called ---
+    console.log('handleThemeChange called with:', newTheme);
+    try {
+        localStorage.setItem(THEME_STORAGE_KEY, newTheme);
+        // --- DEBUG: Confirm saving worked (or log error) ---
+        console.log("Theme preference saved:", newTheme);
+    }
+    catch (e) {
+        console.error("Error saving theme preference to localStorage:", e);
+        // Maybe alert the user if storage fails?
+        alert("Could not save theme preference. LocalStorage might be disabled or full.");
+    }
 }
 // --- Periodic Updates & State Checks ---
 function checkPastEvents(forceRender = false) {
@@ -181,7 +166,6 @@ function checkPastEvents(forceRender = false) {
             return;
         const targetDate = new Date(item.targetDate);
         if (isNaN(targetDate.getTime())) {
-            console.warn(`Item ${item.id} has invalid targetDate: ${item.targetDate}. Marking as past.`);
             item.isPast = true;
             itemsChanged = true;
             return;
@@ -194,20 +178,19 @@ function checkPastEvents(forceRender = false) {
                     item.isPast = new Date(item.targetDate) <= now;
                 }
                 else {
-                    item.isPast = true; // Recurrence finished
+                    item.isPast = true;
                 }
             }
             else {
-                item.isPast = true; // Non-recurring passed
+                item.isPast = true;
             }
             itemsChanged = true;
         }
     });
     if (itemsChanged) {
         saveItems(countdownItems);
-        if (forceRender) {
+        if (forceRender)
             renderCountdownList(countdownItems);
-        }
     }
     return itemsChanged;
 }
@@ -228,13 +211,9 @@ function startTimerUpdates() {
     if (timerInterval)
         clearInterval(timerInterval);
     console.log("Starting timer updates...");
-    timerInterval = window.setInterval(() => {
-        const stateChanged = checkPastEvents();
-        updateTimers(countdownItems);
-        if (stateChanged) {
-            renderCountdownList(countdownItems);
-        }
-    }, 1000);
+    timerInterval = window.setInterval(() => { const stateChanged = checkPastEvents(); updateTimers(countdownItems); if (stateChanged)
+        renderCountdownList(countdownItems); }, 1000);
 }
 // --- Initialize ---
-document.addEventListener('DOMContentLoaded', initializeApp);
+document.addEventListener('DOMContentLoaded', initializeApp); // Ensure this runs after DOM is ready
+// --- End of app.ts ---

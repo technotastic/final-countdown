@@ -4,29 +4,36 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Final Countdown</title>
+    <!-- Link to Google Font for Retro Theme -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <!-- Link to your stylesheet -->
     <link rel="stylesheet" href="style.css">
-    <!-- Simple Emoji Favicon -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⏱️</text></svg>">
 </head>
+<!-- Body tag will get data-theme attribute -->
 <body>
 
     <header>
-        <h1>⏱️ The Final Countdown</h1>
-        <p>Track upcoming events, big and small.</p>
+        <h1 class="main-title">⏱️ The Final Countdown</h1>
+        <p class="subtitle">Track upcoming events, big and small.</p>
+        <!-- Theme Toggle Button -->
+        <button id="theme-toggle-button" class="button theme-toggle" title="Toggle Theme">🎨 Theme</button>
     </header>
 
     <main>
         <section class="list-controls">
             <div class="main-actions">
-                <button id="add-new-button" class="button-primary">Add New Countdown</button>
+                <button id="add-new-button" class="button button-primary">Add New Countdown</button>
                  <div class="import-export-buttons">
-                     <button id="export-button" class="button-secondary">Export Data</button>
-                     <button id="import-button" class="button-secondary">Import Data</button>
+                     <button id="export-button" class="button button-secondary">Export Data</button>
+                     <button id="import-button" class="button button-secondary">Import Data</button>
                      <input type="file" id="import-file" accept=".json" style="display: none;">
                  </div>
             </div>
              <div class="filter-controls">
-                <label for="category-filter">Filter by Category:</label>
+                <label for="category-filter">Filter:</label>
                 <select id="category-filter" name="category-filter">
                     <option value="all">All Categories</option>
                     <!-- Options added dynamically -->
@@ -44,12 +51,12 @@
     </main>
 
     <!-- Modal Structure -->
-    <div id="item-modal" class="modal-overlay">  <!-- <<< FIXED: Removed inline style -->
+    <div id="item-modal" class="modal-overlay">
         <div class="modal-content">
             <button id="modal-close-button" class="modal-close">×</button>
             <h2 id="modal-title">Add New Countdown</h2>
             <form id="item-form">
-                <input type="hidden" id="item-id" name="item-id"> <!-- Hidden field for edit mode -->
+                <input type="hidden" id="item-id" name="item-id">
                 <div class="form-grid">
                     <div class="form-group">
                         <label for="item-name">Event Name:</label>
@@ -57,7 +64,8 @@
                     </div>
                     <div class="form-group">
                         <label for="item-category">Category:</label>
-                        <input type="text" id="item-category" name="item-category" placeholder="e.g., TV Shows, Holidays">
+                        <!-- Added list attribute for datalist -->
+                        <input type="text" id="item-category" name="item-category" placeholder="e.g., TV Shows" list="category-suggestions">
                     </div>
                     <div class="form-group">
                         <label for="item-date">Date:</label>
@@ -65,7 +73,7 @@
                     </div>
                     <div class="form-group">
                         <label for="item-time">Time:</label>
-                        <input type="time" id="item-time" name="item-time" required>
+                        <input type="time" id="item-time" name="item-time" required step="1800"> <!-- step="1800" (30*60) suggests 30min increments to browser UI -->
                     </div>
 
                     <div class="form-group form-group-checkbox">
@@ -92,11 +100,11 @@
 
                     <div class="form-group">
                         <label for="item-note">Note (Optional):</label>
-                        <textarea id="item-note" name="item-note" rows="2" placeholder="e.g., Watch party at my place!"></textarea>
+                        <textarea id="item-note" name="item-note" rows="2" placeholder="e.g., Watch party!"></textarea>
                     </div>
                     <div class="form-group">
                         <label for="item-link">Link (Optional):</label>
-                        <input type="url" id="item-link" name="item-link" placeholder="e.g., https://www.netflix.com/title/...">
+                        <input type="url" id="item-link" name="item-link" placeholder="e.g., https://...">
                     </div>
                      <div class="form-group">
                         <label for="item-design">Display Style:</label>
@@ -104,21 +112,27 @@
                             <option value="default" selected>Default</option>
                             <option value="compact">Compact</option>
                             <option value="card">Card</option>
+                            <!-- Add 'retro-box' specific to the new theme? -->
+                            <option value="retro-box">Retro Box</option>
                         </select>
                     </div>
                 </div>
                 <div class="modal-actions">
-                     <button type="submit" id="modal-save-button" class="button-primary">Add Countdown</button>
-                     <button type="button" id="modal-cancel-button" class="button-secondary">Cancel</button>
+                     <button type="submit" id="modal-save-button" class="button button-primary">Save</button>
+                     <button type="button" id="modal-cancel-button" class="button button-secondary">Cancel</button>
                 </div>
             </form>
         </div>
     </div>
     <!-- End Modal Structure -->
 
+    <!-- Datalist for Category Suggestions -->
+    <datalist id="category-suggestions">
+        <!-- Options populated by JavaScript -->
+    </datalist>
 
     <footer>
-        <p>Made with TypeScript & ❤️</p>
+        <p>Made with TypeScript & <span class="heart">❤️</span></p>
     </footer>
 
     <!-- Load compiled JavaScript -->

@@ -1,16 +1,18 @@
-import { formatTimeRemaining, formatDisplayDate, formatDateTimeForInput } from './utils.js'; // Added .js
+import { formatTimeRemaining, formatDisplayDate, formatDateTimeForInput } from './utils.js';
 // --- State ---
 let categoryFilter = 'all';
-let categories = new Set();
+let categories = new Set(); // Keep track of ALL unique categories encountered
 let currentModalMode = 'add';
 let currentEditingItemId = null;
 // --- DOM Element Selectors ---
+const bodyElement = document.body; // Need body for theme toggling
 const listContainer = document.getElementById('countdown-list');
 const categoryFilterSelect = document.getElementById('category-filter');
 const exportButton = document.getElementById('export-button');
 const importButton = document.getElementById('import-button');
 const importInput = document.getElementById('import-file');
 const addNewButton = document.getElementById('add-new-button');
+const themeToggleButton = document.getElementById('theme-toggle-button'); // Ensure this ID matches HTML
 // Modal Elements
 const modalOverlay = document.getElementById('item-modal');
 const modalContent = modalOverlay === null || modalOverlay === void 0 ? void 0 : modalOverlay.querySelector('.modal-content');
@@ -19,6 +21,7 @@ const modalCancelButton = document.getElementById('modal-cancel-button');
 const modalSaveButton = document.getElementById('modal-save-button');
 const modalTitle = document.getElementById('modal-title');
 const itemForm = document.getElementById('item-form');
+const categoryDatalist = document.getElementById('category-suggestions');
 // Form Elements
 const formElements = itemForm ? {
     id: itemForm.elements.namedItem('item-id'),
@@ -35,26 +38,36 @@ const formElements = itemForm ? {
     recurringOptions: document.getElementById('recurring-options'),
 } : null;
 export function setupUIEventListeners(callbacks) {
-    console.log('setupUIEventListeners called.'); // Keep this for initial check
-    // Check if essential elements exist
-    if (!listContainer || !categoryFilterSelect || !exportButton || !importButton || !importInput || !addNewButton || !modalOverlay || !modalCloseButton || !modalCancelButton || !itemForm || !formElements) {
+    console.log('setupUIEventListeners called.');
+    // --- DEBUG: Check if theme button element is found ---
+    console.log('Selecting Theme Toggle Button:', themeToggleButton);
+    if (!listContainer || !categoryFilterSelect || !exportButton || !importButton || !importInput || !addNewButton || !modalOverlay || !modalCloseButton || !modalCancelButton || !itemForm || !formElements || !themeToggleButton || !categoryDatalist) {
         console.error("CRITICAL ERROR: One or more essential UI elements could not be found. Aborting event listener setup.");
-        alert("Initialization Error: UI components missing. Please check the HTML structure and element IDs.");
+        alert("Initialization Error: UI components missing.");
         return;
     }
-    // --- Modal Triggers ---
-    addNewButton.addEventListener('click', () => {
-        console.log('Add New Button CLICKED!');
-        openModal('add');
+    // --- Theme Toggle ---
+    themeToggleButton.addEventListener('click', () => {
+        // --- DEBUG: Confirm listener is firing ---
+        console.log('Theme toggle button CLICKED!');
+        const currentTheme = bodyElement.getAttribute('data-theme');
+        // --- DEBUG: Log current theme state ---
+        console.log('Current theme attribute before change:', currentTheme);
+        const newTheme = currentTheme === 'retro' ? 'default' : 'retro';
+        // --- DEBUG: Log theme change decision ---
+        console.log('Changing theme to:', newTheme);
+        applyTheme(newTheme); // Apply visually
+        callbacks.themeChanged(newTheme); // Notify app logic to save preference
     });
+    // --- Modal Triggers ---
+    addNewButton.addEventListener('click', () => openModal('add'));
     modalCloseButton.addEventListener('click', closeModal);
     modalCancelButton.addEventListener('click', closeModal);
     modalOverlay.addEventListener('click', (event) => {
-        if (event.target === modalOverlay) {
+        if (event.target === modalOverlay)
             closeModal();
-        }
     });
-    // --- Form Submission (Modal) ---
+    // --- Form Submission ---
     itemForm.addEventListener('submit', (event) => {
         event.preventDefault();
         if (!formElements)
@@ -78,11 +91,11 @@ export function setupUIEventListeners(callbacks) {
         callbacks.saveItem(formData, currentEditingItemId);
         closeModal();
     });
-    // --- Form Element Interactions ---
+    // --- Form Elements ---
     formElements.isRecurring.addEventListener('change', () => {
         formElements.recurringOptions.style.display = formElements.isRecurring.checked ? 'grid' : 'none';
     });
-    // --- List Item Actions (Event Delegation) ---
+    // --- List Item Actions ---
     listContainer.addEventListener('click', (event) => {
         const target = event.target;
         const button = target.closest('button');
@@ -92,18 +105,12 @@ export function setupUIEventListeners(callbacks) {
         const itemId = itemElement === null || itemElement === void 0 ? void 0 : itemElement.getAttribute('data-id');
         if (!itemId)
             return;
-        console.log(`List item button clicked: ID=${itemId}, Classes=${button.className}`);
-        if (button.classList.contains('edit-button')) {
+        if (button.classList.contains('edit-button'))
             callbacks.requestEditItem(itemId);
-        }
-        else if (button.classList.contains('copy-button')) {
+        else if (button.classList.contains('copy-button'))
             callbacks.requestCopyItem(itemId);
-            // ** CHANGED: Listen for 'delete-button' instead of 'dismiss-button' **
-        }
-        else if (button.classList.contains('delete-button')) {
-            // Confirmation is handled in the app.ts callback
+        else if (button.classList.contains('delete-button'))
             callbacks.deleteItem(itemId);
-        }
     });
     // --- Other Controls ---
     categoryFilterSelect.addEventListener('change', () => {
@@ -117,79 +124,73 @@ export function setupUIEventListeners(callbacks) {
         const file = (_a = importInput.files) === null || _a === void 0 ? void 0 : _a[0];
         if (file) {
             callbacks.importItems(file);
-            importInput.value = ''; // Reset input
+            importInput.value = '';
         }
     });
 }
+// --- Theme Management ---
+export function applyTheme(themeName) {
+    // --- DEBUG: Confirm applyTheme is called ---
+    console.log('Applying theme via applyTheme():', themeName);
+    if (themeName === 'retro') {
+        bodyElement.setAttribute('data-theme', 'retro');
+    }
+    else {
+        bodyElement.removeAttribute('data-theme'); // Default theme has no attribute
+    }
+    // --- DEBUG: Log body attribute after change ---
+    console.log('Body data-theme attribute is now:', bodyElement.getAttribute('data-theme'));
+}
 // --- Modal Management ---
 export function openModal(mode, itemId, prefillData) {
-    console.log(`openModal called with mode: ${mode}, itemId: ${itemId}`);
-    if (!modalOverlay || !itemForm || !formElements) {
-        console.error("Cannot open modal: Essential elements missing (overlay or form).");
+    if (!modalOverlay || !itemForm || !formElements)
         return;
-    }
     currentModalMode = mode;
     currentEditingItemId = (mode === 'edit' && itemId) ? itemId : null;
-    resetForm(); // Clear previous state
+    resetForm();
     if (mode === 'edit') {
         modalTitle.textContent = 'Edit Countdown';
-        modalSaveButton.textContent = 'Update Countdown';
+        modalSaveButton.textContent = 'Update';
         if (prefillData) {
             populateForm(prefillData);
             formElements.id.value = itemId || '';
         }
         else {
-            console.error("Edit mode opened without data for ID:", itemId);
-            alert("Could not load item data for editing.");
+            console.error("Edit mode - data missing for ID:", itemId);
             closeModal();
             return;
         }
     }
-    else { // 'add' mode
-        modalTitle.textContent = 'Add New Countdown';
-        modalSaveButton.textContent = 'Add Countdown';
-        if (prefillData) { // Prefilling for 'copy'
-            console.log('Populating form for COPY:', prefillData);
+    else {
+        modalTitle.textContent = 'Add Countdown';
+        modalSaveButton.textContent = 'Add';
+        if (prefillData) { // Copying
             populateForm(Object.assign(Object.assign({}, prefillData), { name: `${prefillData.name || ''} (Copy)` }));
             formElements.id.value = '';
             currentEditingItemId = null;
         }
-        else { // Adding a brand new item
-            console.log('Opening modal for NEW item.');
-            // ** NEW: Set Default Date/Time **
+        else { // New item
             setDefaultDateTime();
         }
     }
+    updateCategoryDatalist(categories); // Populate datalist when modal opens
     modalOverlay.classList.add('visible');
-    // Check visibility style after a frame (for debugging CSS issues)
-    requestAnimationFrame(() => {
-        if (!modalOverlay)
-            return;
-        const styles = window.getComputedStyle(modalOverlay);
-        console.log(`Modal computed styles: display=${styles.display}, visibility=${styles.visibility}, opacity=${styles.opacity}`);
-    });
     formElements.name.focus();
 }
-// ** NEW Function: Set Default Date and Time **
 function setDefaultDateTime() {
     if (!formElements)
         return;
     const now = new Date();
-    let targetTime = new Date(now); // Create a copy
-    // Calculate next 30-minute increment
+    let targetTime = new Date(now);
     const currentMinutes = targetTime.getMinutes();
-    if (currentMinutes === 0 || currentMinutes === 30) {
-        // If already on a 30-min mark, go to the *next* one
+    if (currentMinutes === 0 || currentMinutes === 30)
         targetTime.setMinutes(currentMinutes + 30);
+    else if (currentMinutes < 30)
+        targetTime.setMinutes(30, 0, 0);
+    else {
+        targetTime.setMinutes(0, 0, 0);
+        targetTime.setHours(targetTime.getHours() + 1);
     }
-    else if (currentMinutes < 30) {
-        targetTime.setMinutes(30, 0, 0); // Set minutes to 30, reset secs/ms
-    }
-    else { // currentMinutes > 30
-        targetTime.setMinutes(0, 0, 0); // Reset minutes, secs, ms
-        targetTime.setHours(targetTime.getHours() + 1); // Increment hour (handles day/month/year rollover)
-    }
-    // Format for input fields
     const year = targetTime.getFullYear();
     const month = (targetTime.getMonth() + 1).toString().padStart(2, '0');
     const day = targetTime.getDate().toString().padStart(2, '0');
@@ -197,7 +198,6 @@ function setDefaultDateTime() {
     const minutes = targetTime.getMinutes().toString().padStart(2, '0');
     formElements.date.value = `${year}-${month}-${day}`;
     formElements.time.value = `${hours}:${minutes}`;
-    console.log(`Default time set to: ${hours}:${minutes}`);
 }
 export function closeModal() {
     if (!modalOverlay)
@@ -231,7 +231,6 @@ function populateForm(itemData) {
             formElements.time.value = time;
         }
         catch (e) {
-            console.error("Error formatting date/time during populateForm:", e);
             formElements.date.value = '';
             formElements.time.value = '';
         }
@@ -244,29 +243,27 @@ function populateForm(itemData) {
     if (itemData.isRecurring) {
         formElements.recurringOptions.style.display = 'grid';
         formElements.recurrenceInterval.value = itemData.recurrenceInterval || 'weekly';
-        formElements.recurrenceEndDate.value = itemData.recurrenceEndDate
-            ? itemData.recurrenceEndDate.split('T')[0]
-            : '';
+        formElements.recurrenceEndDate.value = itemData.recurrenceEndDate ? itemData.recurrenceEndDate.split('T')[0] : '';
     }
     else {
         formElements.recurringOptions.style.display = 'none';
     }
 }
-// --- Rendering Functions ---
+// --- Rendering ---
 export function renderCountdownList(items) {
-    if (!listContainer) {
-        console.error("Cannot render list: List container missing.");
+    if (!listContainer)
         return;
-    }
     const scrollY = window.scrollY;
     listContainer.innerHTML = '';
-    categories.clear();
-    categories.add('all');
+    const localCategories = new Set();
+    localCategories.add('all');
     const now = Date.now();
-    const filteredItems = items.filter(item => {
-        categories.add(item.category);
-        return categoryFilter === 'all' || item.category === categoryFilter;
+    items.forEach(item => {
+        const categoryName = (item.category || 'Uncategorized').trim();
+        localCategories.add(categoryName);
     });
+    categories = localCategories;
+    const filteredItems = items.filter(item => categoryFilter === 'all' || (item.category || 'Uncategorized') === categoryFilter);
     filteredItems.sort((a, b) => {
         const aIsPassed = new Date(a.targetDate).getTime() <= now;
         const bIsPassed = new Date(b.targetDate).getTime() <= now;
@@ -289,7 +286,7 @@ export function renderCountdownList(items) {
                 listContainer.appendChild(itemElement);
             }
             catch (e) {
-                console.error(`Error creating element for item ${item.id} (${item.name}):`, e);
+                console.error(`Error creating element for item ${item.id}:`, e);
             }
         });
     }
@@ -302,33 +299,27 @@ function createCountdownElement(item) {
     element.setAttribute('data-id', item.id);
     const targetDate = new Date(item.targetDate);
     if (isNaN(targetDate.getTime())) {
-        console.error(`Invalid targetDate encountered for item ${item.id}: ${item.targetDate}`);
         element.innerHTML = `<div class="item-header"><span class="item-name">INVALID ITEM DATA</span></div><p>Error: Invalid target date.</p>`;
         element.classList.add('invalid-item');
         return element;
     }
     const timeRemainingMs = targetDate.getTime() - Date.now();
     const isCurrentlyPast = item.isPast;
-    if (isCurrentlyPast) {
+    if (isCurrentlyPast)
         element.classList.add('past');
-    }
     const safeName = escapeHtml(item.name);
-    const safeCategory = escapeHtml(item.category);
+    const safeCategory = escapeHtml(item.category || 'Uncategorized');
     const safeNote = escapeHtml(item.note || '');
     const safeLink = item.link ? escapeHtml(item.link) : '';
     const linkHref = ensureHttp(item.link || '#');
-    // Action Buttons
     const editButtonHtml = `<button class="edit-button" title="Edit Item">✏️</button>`;
     const copyButtonHtml = `<button class="copy-button" title="Copy Item">📋</button>`;
-    // ** CHANGED: Always show Delete button, removed Dismiss button logic **
-    const deleteButtonHtml = `<button class="delete-button button-danger-subtle" title="Delete Item">🗑️</button>`; // Using emoji
+    const deleteButtonHtml = `<button class="delete-button button-danger-subtle" title="Delete Item">🗑️</button>`;
     element.innerHTML = `
         <div class="item-header">
             <span class="item-name">${safeName}</span>
             <div class="item-actions">
-                 ${editButtonHtml}
-                 ${copyButtonHtml}
-                 ${deleteButtonHtml}
+                 ${editButtonHtml} ${copyButtonHtml} ${deleteButtonHtml}
             </div>
         </div>
         <div class="item-timer" data-target-date="${item.targetDate}">
@@ -353,10 +344,9 @@ export function updateTimers(items) {
     const itemElements = listContainer.querySelectorAll('.countdown-item:not(.past)');
     const now = Date.now();
     itemElements.forEach(element => {
-        const id = element.getAttribute('data-id');
         const timerElement = element.querySelector('.item-timer');
         const targetDateStr = timerElement === null || timerElement === void 0 ? void 0 : timerElement.getAttribute('data-target-date');
-        if (id && timerElement && targetDateStr) {
+        if (timerElement && targetDateStr) {
             try {
                 const targetDate = new Date(targetDateStr);
                 if (isNaN(targetDate.getTime()))
@@ -364,9 +354,7 @@ export function updateTimers(items) {
                 const timeRemainingMs = targetDate.getTime() - now;
                 timerElement.textContent = (timeRemainingMs > 0) ? formatTimeRemaining(timeRemainingMs) : "Now!";
             }
-            catch (e) {
-                console.error("Error updating timer for item:", id, e);
-            }
+            catch (e) { /* ignore error */ }
         }
     });
 }
@@ -374,10 +362,11 @@ function updateCategoryFilterOptions() {
     if (!categoryFilterSelect)
         return;
     const currentSelection = categoryFilterSelect.value;
-    while (categoryFilterSelect.options.length > 1) {
+    while (categoryFilterSelect.options.length > 1)
         categoryFilterSelect.remove(1);
-    }
-    const sortedCategories = Array.from(categories).filter(cat => cat !== 'all').sort((a, b) => a.localeCompare(b));
+    const sortedCategories = Array.from(categories)
+        .filter(cat => cat && cat !== 'all')
+        .sort((a, b) => a.localeCompare(b));
     sortedCategories.forEach(category => {
         const option = document.createElement('option');
         option.value = category;
@@ -391,6 +380,20 @@ function updateCategoryFilterOptions() {
         categoryFilterSelect.value = 'all';
         categoryFilter = 'all';
     }
+}
+function updateCategoryDatalist(allCategories) {
+    if (!categoryDatalist)
+        return;
+    categoryDatalist.innerHTML = '';
+    const sortedCategories = Array.from(allCategories)
+        .filter(cat => cat && cat !== 'all' && cat !== 'Uncategorized')
+        .sort((a, b) => a.localeCompare(b));
+    sortedCategories.forEach(category => {
+        const option = document.createElement('option');
+        option.value = category;
+        categoryDatalist.appendChild(option);
+    });
+    console.log('Updated category datalist with:', sortedCategories);
 }
 // --- Helper Functions ---
 function escapeHtml(unsafe) {
@@ -424,3 +427,4 @@ function ensureHttp(link) {
     }
     return link;
 }
+// --- End of ui.ts ---
