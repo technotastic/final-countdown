@@ -16,3 +16,16 @@ export interface CountdownItem {
     createdAt: string;        // ISO 8601 string when item was created
     isPast: boolean;          // Flag if the current targetDate has passed
 }
+
+// Data structure for form values, useful for passing data around
+export interface CountdownFormData {
+    name: string;
+    targetDateTime: string; // Combined date and time ISO string or similar input format
+    isRecurring: boolean;
+    recurrenceInterval?: RecurrenceInterval;
+    recurrenceEndDate?: string | null;
+    category: string;
+    note?: string;
+    link?: string;
+    design: TimerDesign;
+}

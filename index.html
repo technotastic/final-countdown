@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Final Countdown</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Simple Emoji Favicon -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⏱️</text></svg>">
 </head>
 <body>
@@ -15,9 +16,40 @@
     </header>
 
     <main>
-        <section class="controls">
-            <h2>Add New Countdown</h2>
-            <form id="add-item-form">
+        <section class="list-controls">
+            <div class="main-actions">
+                <button id="add-new-button" class="button-primary">Add New Countdown</button>
+                 <div class="import-export-buttons">
+                     <button id="export-button" class="button-secondary">Export Data</button>
+                     <button id="import-button" class="button-secondary">Import Data</button>
+                     <input type="file" id="import-file" accept=".json" style="display: none;">
+                 </div>
+            </div>
+             <div class="filter-controls">
+                <label for="category-filter">Filter by Category:</label>
+                <select id="category-filter" name="category-filter">
+                    <option value="all">All Categories</option>
+                    <!-- Options added dynamically -->
+                </select>
+            </div>
+        </section>
+
+        <section id="countdown-list-container">
+             <h2>Your Countdowns</h2>
+            <div id="countdown-list">
+                <!-- Countdown items will be rendered here -->
+                <p class="loading">Loading countdowns...</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal Structure -->
+    <div id="item-modal" class="modal-overlay">  <!-- <<< FIXED: Removed inline style -->
+        <div class="modal-content">
+            <button id="modal-close-button" class="modal-close">×</button>
+            <h2 id="modal-title">Add New Countdown</h2>
+            <form id="item-form">
+                <input type="hidden" id="item-id" name="item-id"> <!-- Hidden field for edit mode -->
                 <div class="form-grid">
                     <div class="form-group">
                         <label for="item-name">Event Name:</label>
@@ -75,42 +107,21 @@
                         </select>
                     </div>
                 </div>
-                <button type="submit">Add Countdown</button>
-            </form>
-        </section>
-
-        <section class="list-controls">
-             <h2>Your Countdowns</h2>
-             <div class="filter-export-import">
-                <div class="form-group">
-                    <label for="category-filter">Filter by Category:</label>
-                    <select id="category-filter" name="category-filter">
-                        <option value="all">All Categories</option>
-                        <!-- Options added dynamically -->
-                    </select>
+                <div class="modal-actions">
+                     <button type="submit" id="modal-save-button" class="button-primary">Add Countdown</button>
+                     <button type="button" id="modal-cancel-button" class="button-secondary">Cancel</button>
                 </div>
-                <div class="import-export-buttons">
-                     <button id="export-button">Export Data</button>
-                     <button id="import-button">Import Data</button>
-                     <input type="file" id="import-file" accept=".json" style="display: none;">
-                 </div>
-             </div>
-        </section>
+            </form>
+        </div>
+    </div>
+    <!-- End Modal Structure -->
 
-        <section id="countdown-list-container">
-            <div id="countdown-list">
-                <!-- Countdown items will be rendered here -->
-                <p class="loading">Loading countdowns...</p>
-            </div>
-        </section>
-    </main>
 
     <footer>
         <p>Made with TypeScript & ❤️</p>
     </footer>
 
     <!-- Load compiled JavaScript -->
-    <!-- Make sure the path matches your `outDir` in tsconfig.json -->
     <script src="dist/app.js" type="module" defer></script>
 
 </body>

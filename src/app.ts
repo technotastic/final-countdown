@@ -1,99 +1,172 @@
-import { CountdownItem } from './models.js'; // <--- Add .js
-import { loadItems, saveItems, exportItems, importItems } from './storage.js'; // <--- Add .js
-import { setupUIEventListeners, renderCountdownList, updateTimers } from './ui.js'; // <--- Add .js
-import { generateId, calculateNextOccurrence, isRecurrenceFinished } from './utils.js'; // <--- Add .js
+import { CountdownItem, CountdownFormData } from './models.js'; // Added .js
+import { loadItems, saveItems, exportItems, importItems, getItemById } from './storage.js'; // Added .js
+import { setupUIEventListeners, renderCountdownList, updateTimers, openModal, closeModal } from './ui.js'; // Added .js
+import { generateId, calculateNextOccurrence, isRecurrenceFinished } from './utils.js'; // Added .js
 
+// --- Application State ---
 let countdownItems: CountdownItem[] = [];
 let timerInterval: number | null = null;
 
-// --- Application Logic ---
-
+// --- Initialization ---
 function initializeApp(): void {
-    console.log("Initializing Final Countdown App...");
+    console.log("Initializing Final Countdown App v2.1..."); // Version bump!
     countdownItems = loadItems();
-    console.log(`Loaded ${countdownItems.length} items from storage.`);
+    console.log(`Loaded ${countdownItems.length} items.`);
 
-    setupUIEventListeners(
-        handleAddItem,
-        handleDismissItem,
-        handleFilterChange,
-        handleExport,
-        handleImport
-    );
+    setupUIEventListeners({
+        saveItem: handleSaveItem,
+        // ** CHANGED: Pass delete handler **
+        deleteItem: handleDeleteItem,
+        requestEditItem: handleEditRequest,
+        requestCopyItem: handleCopyRequest,
+        updateFilter: handleFilterChange,
+        exportItems: handleExport,
+        importItems: handleImport,
+    });
 
-    renderCountdownList(countdownItems); // Initial render
-    startTimerUpdates(); // Start the interval timer
-    checkPastEvents(); // Perform initial check for past events
+    renderCountdownList(countdownItems);
+    startTimerUpdates();
+    checkPastEvents(true);
     console.log("App initialized.");
 }
 
-function handleAddItem(itemData: Omit<CountdownItem, 'id' | 'createdAt' | 'targetDate' | 'originalTargetDate' | 'isPast'> & { targetDateTime: string }): void {
-    const newItem: CountdownItem = {
-        id: generateId(),
-        name: itemData.name,
-        targetDate: new Date(itemData.targetDateTime).toISOString(), // Store as ISO string
-        originalTargetDate: new Date(itemData.targetDateTime).toISOString(),
-        isRecurring: itemData.isRecurring,
-        recurrenceInterval: itemData.recurrenceInterval,
-        recurrenceEndDate: itemData.recurrenceEndDate ? new Date(itemData.recurrenceEndDate).toISOString() : null,
-        category: itemData.category,
-        note: itemData.note,
-        link: itemData.link,
-        design: itemData.design,
-        createdAt: new Date().toISOString(),
-        isPast: false // Initially false, will be checked by interval
-    };
+// --- Core Logic Handlers ---
 
-    // If recurring and the *initial* date is already past, calculate the first *future* occurrence
-    if (newItem.isRecurring && new Date(newItem.targetDate) < new Date()) {
-        console.log(`Initial date for recurring item '${newItem.name}' is past. Calculating next occurrence.`);
-        const nextDate = getNextValidOccurrence(newItem);
-        if (nextDate) {
-            newItem.targetDate = nextDate;
+function handleSaveItem(formData: CountdownFormData, editingId: string | null): void {
+    try {
+        if (editingId) {
+            // --- Update Existing Item ---
+            const itemIndex = countdownItems.findIndex(item => item.id === editingId);
+            if (itemIndex === -1) throw new Error("Item to update not found");
+
+            const originalItem = countdownItems[itemIndex];
+            const updatedItem: CountdownItem = {
+                ...originalItem,
+                name: formData.name,
+                category: formData.category,
+                note: formData.note,
+                link: formData.link,
+                design: formData.design,
+                targetDate: new Date(formData.targetDateTime).toISOString(),
+                isRecurring: formData.isRecurring,
+                recurrenceInterval: formData.isRecurring ? formData.recurrenceInterval : undefined,
+                recurrenceEndDate: formData.isRecurring && formData.recurrenceEndDate ? new Date(formData.recurrenceEndDate).toISOString() : null,
+                isPast: new Date(formData.targetDateTime) < new Date(),
+            };
+
+            if (!updatedItem.isRecurring) {
+                 updatedItem.recurrenceInterval = undefined;
+                 updatedItem.recurrenceEndDate = null;
+             }
+
+            // Recalculate next occurrence if needed
+             if (updatedItem.isPast && updatedItem.isRecurring) {
+                 const nextDate = getNextValidOccurrence(updatedItem);
+                 if (nextDate) {
+                     updatedItem.targetDate = nextDate;
+                     updatedItem.isPast = false;
+                 }
+             } else if (!updatedItem.isPast && new Date(updatedItem.targetDate) < new Date()) {
+                 updatedItem.isPast = true;
+             }
+
+            countdownItems[itemIndex] = updatedItem;
+            console.log("Updated item:", updatedItem.name);
+
         } else {
-            // Cannot find a valid future date (e.g., end date is also in the past)
-            console.warn(`Could not find a valid future start date for recurring item '${newItem.name}'. Setting as past.`);
-            newItem.isPast = true; // Mark immediately as past/finished
+            // --- Add New Item ---
+            const newItem: CountdownItem = {
+                id: generateId(),
+                name: formData.name,
+                targetDate: new Date(formData.targetDateTime).toISOString(),
+                originalTargetDate: new Date(formData.targetDateTime).toISOString(),
+                isRecurring: formData.isRecurring,
+                recurrenceInterval: formData.isRecurring ? formData.recurrenceInterval : undefined,
+                recurrenceEndDate: formData.isRecurring && formData.recurrenceEndDate ? new Date(formData.recurrenceEndDate).toISOString() : null,
+                category: formData.category,
+                note: formData.note,
+                link: formData.link,
+                design: formData.design,
+                createdAt: new Date().toISOString(),
+                isPast: new Date(formData.targetDateTime) < new Date()
+            };
+
+            if (newItem.isPast && newItem.isRecurring) {
+                 const nextDate = getNextValidOccurrence(newItem);
+                 if (nextDate) {
+                     newItem.targetDate = nextDate;
+                     newItem.isPast = false;
+                 }
+             } else if (!newItem.isPast && new Date(newItem.targetDate) < new Date()){
+                  newItem.isPast = true;
+             }
+
+            countdownItems.push(newItem);
+            console.log("Added new item:", newItem.name);
         }
+
+        saveItems(countdownItems);
+        renderCountdownList(countdownItems); // Re-render
+
+    } catch (e) {
+         console.error("Error saving item:", e);
+         alert(`An error occurred while saving: ${e instanceof Error ? e.message : 'Unknown error'}`);
+    }
+}
+
+
+function handleEditRequest(id: string): void {
+    console.log("Requesting edit for item:", id);
+    const item = countdownItems.find(i => i.id === id);
+    if (item) {
+        openModal('edit', id, item);
     } else {
-         // Set isPast based on initial target date for non-recurring or future recurring
-         newItem.isPast = new Date(newItem.targetDate) < new Date();
+        console.error("Item not found for edit:", id);
+        alert("Could not find the selected item to edit.");
     }
-
-
-    countdownItems.push(newItem);
-    saveItems(countdownItems);
-    renderCountdownList(countdownItems); // Re-render the list
-    console.log("Added new item:", newItem.name);
 }
 
-// Helper to find the first valid future date for a recurring event
-function getNextValidOccurrence(item: CountdownItem): string | null {
-    let currentDate = item.targetDate;
-    const now = new Date();
-
-    if (!item.isRecurring || !item.recurrenceInterval) return null;
-
-    while (new Date(currentDate) < now) {
-        const next = calculateNextOccurrence(currentDate, item.recurrenceInterval);
-        if (!next || isRecurrenceFinished(next, item.recurrenceEndDate)) {
-            return null; // Stop if no next date or recurrence finished
-        }
-        currentDate = next;
+function handleCopyRequest(id: string): void {
+    console.log("Requesting copy for item:", id);
+    const item = countdownItems.find(i => i.id === id);
+    if (item) {
+        openModal('add', undefined, item);
+    } else {
+        console.error("Item not found for copy:", id);
+        alert("Could not find the selected item to copy.");
     }
-    return currentDate; // This is the first occurrence >= now
+}
+
+// ** NEW Delete Handler **
+function handleDeleteItem(id: string): void {
+     const itemIndex = countdownItems.findIndex(item => item.id === id);
+     if (itemIndex === -1) {
+         console.error("Item to delete not found:", id);
+         alert("Error: Could not find the item to delete.");
+         return;
+     }
+
+     const itemToDelete = countdownItems[itemIndex];
+
+     // Ask for confirmation
+     const confirmed = confirm(`Are you sure you want to delete "${itemToDelete.name}"?`);
+
+     if (confirmed) {
+         countdownItems.splice(itemIndex, 1); // Remove item from array
+         saveItems(countdownItems);          // Save updated array
+         renderCountdownList(countdownItems); // Re-render the list
+         console.log("Deleted item:", id, itemToDelete.name);
+         // Optional: Add a success notification/toast later
+     } else {
+         console.log("Deletion cancelled for item:", id);
+     }
 }
 
 
-function handleDismissItem(id: string): void {
-    countdownItems = countdownItems.filter(item => item.id !== id);
-    saveItems(countdownItems);
-    renderCountdownList(countdownItems); // Re-render
-    console.log("Dismissed item:", id);
-}
+// ** REMOVED handleDismissItem ** (Replaced by handleDeleteItem)
+
 
 function handleFilterChange(newFilter: string): void {
-    // The filter state is managed in ui.ts, just need to re-render
     console.log("Filter changed to:", newFilter);
     renderCountdownList(countdownItems);
 }
@@ -110,13 +183,20 @@ function handleExport(): void {
 function handleImport(file: File): void {
     console.log("Attempting to import file:", file.name);
     importItems(file, (importedItems) => {
-        // Optional: Ask user if they want to replace or merge
-        // For simplicity, let's replace current items
-        if (confirm(`Importing ${importedItems.length} items will replace your current list. Continue?`)) {
+        if (importedItems.length === 0 && file.size > 0) {
+             alert("Import finished, but no valid countdown items were found in the file.");
+             return;
+        }
+        if (importedItems.length === 0 && file.size === 0) {
+             alert("Import failed: The selected file appears to be empty.");
+             return;
+        }
+        const replace = confirm(`Import ${importedItems.length} item(s)? This will REPLACE your current list.`);
+        if (replace) {
             countdownItems = importedItems;
-            checkPastEvents(); // Re-check status of imported items
+            checkPastEvents(true);
             saveItems(countdownItems);
-            renderCountdownList(countdownItems);
+            // renderCountdownList usually called by checkPastEvents if changes occur
             console.log("Import successful. Items replaced.");
             alert("Import successful!");
         } else {
@@ -126,63 +206,72 @@ function handleImport(file: File): void {
 }
 
 
-function checkPastEvents(): boolean {
+// --- Periodic Updates & State Checks ---
+
+function checkPastEvents(forceRender: boolean = false): boolean {
     let itemsChanged = false;
     const now = new Date();
 
     countdownItems.forEach(item => {
-        const targetDate = new Date(item.targetDate);
+        if (item.isPast) return;
 
-        if (!item.isPast && targetDate <= now) {
-            // Event just passed
+        const targetDate = new Date(item.targetDate);
+        if (isNaN(targetDate.getTime())) {
+             console.warn(`Item ${item.id} has invalid targetDate: ${item.targetDate}. Marking as past.`);
+             item.isPast = true;
+             itemsChanged = true;
+             return;
+        }
+
+        if (targetDate <= now) {
             if (item.isRecurring && item.recurrenceInterval) {
                 const nextOccurrence = calculateNextOccurrence(item.targetDate, item.recurrenceInterval);
-
                 if (nextOccurrence && !isRecurrenceFinished(nextOccurrence, item.recurrenceEndDate)) {
-                    console.log(`Recurring item '${item.name}' passed. Updating to next occurrence: ${nextOccurrence}`);
                     item.targetDate = nextOccurrence;
-                    item.isPast = false; // Reset past flag as it's updated to future
+                    item.isPast = new Date(item.targetDate) <= now;
                 } else {
-                    console.log(`Recurring item '${item.name}' passed and recurrence finished.`);
-                    item.isPast = true; // Mark as permanently past
+                    item.isPast = true; // Recurrence finished
                 }
             } else {
-                // Non-recurring event passed
-                console.log(`Non-recurring item '${item.name}' passed.`);
-                item.isPast = true;
+                item.isPast = true; // Non-recurring passed
             }
             itemsChanged = true;
-        } else if (item.isPast && targetDate > now) {
-            // This case shouldn't normally happen if logic is correct,
-            // but could occur if system clock changes or data is manually edited.
-            // Re-evaluate if it's actually still past.
-             console.warn(`Item '${item.name}' was marked as past, but target date is now in the future. Resetting.`);
-             item.isPast = false;
-             itemsChanged = true;
         }
     });
 
     if (itemsChanged) {
-        saveItems(countdownItems); // Save changes if any item's state was updated
+        saveItems(countdownItems);
+        if (forceRender) {
+             renderCountdownList(countdownItems);
+        }
     }
     return itemsChanged;
 }
 
-function startTimerUpdates(): void {
-    if (timerInterval) {
-        clearInterval(timerInterval); // Clear existing interval if any
-    }
+function getNextValidOccurrence(item: CountdownItem): string | null {
+    let currentDate = item.targetDate;
+    const now = new Date();
+    if (!item.isRecurring || !item.recurrenceInterval) return null;
 
-    timerInterval = window.setInterval(() => {
-        const stateChanged = checkPastEvents(); // Check if any events passed or recurred
-        updateTimers(countdownItems); // Update display of time remaining
-        if (stateChanged) {
-            renderCountdownList(countdownItems); // Re-render list if state changed (e.g., event passed, recurrence updated)
-        }
-    }, 1000); // Update every second
-    console.log("Timer updates started.");
+    while (new Date(currentDate) < now) {
+        const next = calculateNextOccurrence(currentDate, item.recurrenceInterval);
+        if (!next || isRecurrenceFinished(next, item.recurrenceEndDate)) return null;
+        currentDate = next;
+    }
+    return currentDate;
 }
 
-// --- Initialize the App ---
-// Ensure DOM is fully loaded before running scripts
+function startTimerUpdates(): void {
+    if (timerInterval) clearInterval(timerInterval);
+    console.log("Starting timer updates...");
+    timerInterval = window.setInterval(() => {
+        const stateChanged = checkPastEvents();
+        updateTimers(countdownItems);
+        if (stateChanged) {
+            renderCountdownList(countdownItems);
+        }
+    }, 1000);
+}
+
+// --- Initialize ---
 document.addEventListener('DOMContentLoaded', initializeApp);

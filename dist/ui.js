@@ -1,43 +1,70 @@
-import { formatTimeRemaining, formatDisplayDate } from './utils.js';
-let categoryFilter = 'all'; // State for current filter
-let categories = new Set(); // Dynamically track categories
+import { formatTimeRemaining, formatDisplayDate, formatDateTimeForInput } from './utils.js'; // Added .js
+// --- State ---
+let categoryFilter = 'all';
+let categories = new Set();
+let currentModalMode = 'add';
+let currentEditingItemId = null;
 // --- DOM Element Selectors ---
-const form = document.getElementById('add-item-form');
-const formElements = {
-    name: form.elements.namedItem('item-name'),
-    date: form.elements.namedItem('item-date'),
-    time: form.elements.namedItem('item-time'),
-    isRecurring: form.elements.namedItem('item-recurring'),
-    recurrenceInterval: form.elements.namedItem('item-recurrence-interval'),
-    recurrenceEndDate: form.elements.namedItem('item-recurrence-end-date'),
-    category: form.elements.namedItem('item-category'),
-    note: form.elements.namedItem('item-note'),
-    link: form.elements.namedItem('item-link'),
-    design: form.elements.namedItem('item-design'),
-    recurringOptions: document.getElementById('recurring-options'),
-};
 const listContainer = document.getElementById('countdown-list');
 const categoryFilterSelect = document.getElementById('category-filter');
 const exportButton = document.getElementById('export-button');
 const importButton = document.getElementById('import-button');
 const importInput = document.getElementById('import-file');
-// --- Event Handler Setup ---
-export function setupUIEventListeners(addItemCallback, dismissItemCallback, updateFilterCallback, exportCallback, importCallback) {
-    // Form Submission
-    form.addEventListener('submit', (event) => {
+const addNewButton = document.getElementById('add-new-button');
+// Modal Elements
+const modalOverlay = document.getElementById('item-modal');
+const modalContent = modalOverlay === null || modalOverlay === void 0 ? void 0 : modalOverlay.querySelector('.modal-content');
+const modalCloseButton = document.getElementById('modal-close-button');
+const modalCancelButton = document.getElementById('modal-cancel-button');
+const modalSaveButton = document.getElementById('modal-save-button');
+const modalTitle = document.getElementById('modal-title');
+const itemForm = document.getElementById('item-form');
+// Form Elements
+const formElements = itemForm ? {
+    id: itemForm.elements.namedItem('item-id'),
+    name: itemForm.elements.namedItem('item-name'),
+    date: itemForm.elements.namedItem('item-date'),
+    time: itemForm.elements.namedItem('item-time'),
+    isRecurring: itemForm.elements.namedItem('item-recurring'),
+    recurrenceInterval: itemForm.elements.namedItem('item-recurrence-interval'),
+    recurrenceEndDate: itemForm.elements.namedItem('item-recurrence-end-date'),
+    category: itemForm.elements.namedItem('item-category'),
+    note: itemForm.elements.namedItem('item-note'),
+    link: itemForm.elements.namedItem('item-link'),
+    design: itemForm.elements.namedItem('item-design'),
+    recurringOptions: document.getElementById('recurring-options'),
+} : null;
+export function setupUIEventListeners(callbacks) {
+    console.log('setupUIEventListeners called.'); // Keep this for initial check
+    // Check if essential elements exist
+    if (!listContainer || !categoryFilterSelect || !exportButton || !importButton || !importInput || !addNewButton || !modalOverlay || !modalCloseButton || !modalCancelButton || !itemForm || !formElements) {
+        console.error("CRITICAL ERROR: One or more essential UI elements could not be found. Aborting event listener setup.");
+        alert("Initialization Error: UI components missing. Please check the HTML structure and element IDs.");
+        return;
+    }
+    // --- Modal Triggers ---
+    addNewButton.addEventListener('click', () => {
+        console.log('Add New Button CLICKED!');
+        openModal('add');
+    });
+    modalCloseButton.addEventListener('click', closeModal);
+    modalCancelButton.addEventListener('click', closeModal);
+    modalOverlay.addEventListener('click', (event) => {
+        if (event.target === modalOverlay) {
+            closeModal();
+        }
+    });
+    // --- Form Submission (Modal) ---
+    itemForm.addEventListener('submit', (event) => {
         event.preventDefault();
-        const targetDateTime = `${formElements.date.value}T${formElements.time.value}`;
-        // Basic validation: Check if date and time are provided
+        if (!formElements)
+            return;
+        const targetDateTime = `${formElements.date.value}T${formElements.time.value || '00:00'}`;
         if (!formElements.date.value || !formElements.time.value) {
             alert("Please select both a date and a time.");
             return;
         }
-        // Check if target date is in the past
-        if (new Date(targetDateTime) < new Date() && !formElements.isRecurring.checked) {
-            alert("Target date cannot be in the past for non-recurring events.");
-            return;
-        }
-        const newItemData = {
+        const formData = {
             name: formElements.name.value.trim() || 'Unnamed Event',
             targetDateTime: targetDateTime,
             isRecurring: formElements.isRecurring.checked,
@@ -48,191 +75,352 @@ export function setupUIEventListeners(addItemCallback, dismissItemCallback, upda
             link: formElements.link.value.trim(),
             design: formElements.design.value,
         };
-        addItemCallback(newItemData);
-        form.reset();
-        formElements.recurringOptions.style.display = 'none'; // Hide recurrence options after submit
+        callbacks.saveItem(formData, currentEditingItemId);
+        closeModal();
     });
-    // Toggle Recurrence Options Visibility
+    // --- Form Element Interactions ---
     formElements.isRecurring.addEventListener('change', () => {
-        formElements.recurringOptions.style.display = formElements.isRecurring.checked ? 'block' : 'none';
+        formElements.recurringOptions.style.display = formElements.isRecurring.checked ? 'grid' : 'none';
     });
-    // Dismiss Button (Event Delegation)
+    // --- List Item Actions (Event Delegation) ---
     listContainer.addEventListener('click', (event) => {
-        var _a;
         const target = event.target;
-        if (target.classList.contains('dismiss-button')) {
-            const itemId = (_a = target.closest('.countdown-item')) === null || _a === void 0 ? void 0 : _a.getAttribute('data-id');
-            if (itemId) {
-                dismissItemCallback(itemId);
-            }
+        const button = target.closest('button');
+        if (!button)
+            return;
+        const itemElement = button.closest('.countdown-item');
+        const itemId = itemElement === null || itemElement === void 0 ? void 0 : itemElement.getAttribute('data-id');
+        if (!itemId)
+            return;
+        console.log(`List item button clicked: ID=${itemId}, Classes=${button.className}`);
+        if (button.classList.contains('edit-button')) {
+            callbacks.requestEditItem(itemId);
+        }
+        else if (button.classList.contains('copy-button')) {
+            callbacks.requestCopyItem(itemId);
+            // ** CHANGED: Listen for 'delete-button' instead of 'dismiss-button' **
+        }
+        else if (button.classList.contains('delete-button')) {
+            // Confirmation is handled in the app.ts callback
+            callbacks.deleteItem(itemId);
         }
     });
-    // Category Filter Change
+    // --- Other Controls ---
     categoryFilterSelect.addEventListener('change', () => {
         categoryFilter = categoryFilterSelect.value;
-        updateFilterCallback(categoryFilter); // Notify app logic to re-render
+        callbacks.updateFilter(categoryFilter);
     });
-    // Export Button
-    exportButton.addEventListener('click', exportCallback);
-    // Import Button Click triggers hidden file input
+    exportButton.addEventListener('click', callbacks.exportItems);
     importButton.addEventListener('click', () => importInput.click());
-    // Import File Selection
     importInput.addEventListener('change', () => {
         var _a;
         const file = (_a = importInput.files) === null || _a === void 0 ? void 0 : _a[0];
         if (file) {
-            importCallback(file);
+            callbacks.importItems(file);
             importInput.value = ''; // Reset input
         }
     });
 }
+// --- Modal Management ---
+export function openModal(mode, itemId, prefillData) {
+    console.log(`openModal called with mode: ${mode}, itemId: ${itemId}`);
+    if (!modalOverlay || !itemForm || !formElements) {
+        console.error("Cannot open modal: Essential elements missing (overlay or form).");
+        return;
+    }
+    currentModalMode = mode;
+    currentEditingItemId = (mode === 'edit' && itemId) ? itemId : null;
+    resetForm(); // Clear previous state
+    if (mode === 'edit') {
+        modalTitle.textContent = 'Edit Countdown';
+        modalSaveButton.textContent = 'Update Countdown';
+        if (prefillData) {
+            populateForm(prefillData);
+            formElements.id.value = itemId || '';
+        }
+        else {
+            console.error("Edit mode opened without data for ID:", itemId);
+            alert("Could not load item data for editing.");
+            closeModal();
+            return;
+        }
+    }
+    else { // 'add' mode
+        modalTitle.textContent = 'Add New Countdown';
+        modalSaveButton.textContent = 'Add Countdown';
+        if (prefillData) { // Prefilling for 'copy'
+            console.log('Populating form for COPY:', prefillData);
+            populateForm(Object.assign(Object.assign({}, prefillData), { name: `${prefillData.name || ''} (Copy)` }));
+            formElements.id.value = '';
+            currentEditingItemId = null;
+        }
+        else { // Adding a brand new item
+            console.log('Opening modal for NEW item.');
+            // ** NEW: Set Default Date/Time **
+            setDefaultDateTime();
+        }
+    }
+    modalOverlay.classList.add('visible');
+    // Check visibility style after a frame (for debugging CSS issues)
+    requestAnimationFrame(() => {
+        if (!modalOverlay)
+            return;
+        const styles = window.getComputedStyle(modalOverlay);
+        console.log(`Modal computed styles: display=${styles.display}, visibility=${styles.visibility}, opacity=${styles.opacity}`);
+    });
+    formElements.name.focus();
+}
+// ** NEW Function: Set Default Date and Time **
+function setDefaultDateTime() {
+    if (!formElements)
+        return;
+    const now = new Date();
+    let targetTime = new Date(now); // Create a copy
+    // Calculate next 30-minute increment
+    const currentMinutes = targetTime.getMinutes();
+    if (currentMinutes === 0 || currentMinutes === 30) {
+        // If already on a 30-min mark, go to the *next* one
+        targetTime.setMinutes(currentMinutes + 30);
+    }
+    else if (currentMinutes < 30) {
+        targetTime.setMinutes(30, 0, 0); // Set minutes to 30, reset secs/ms
+    }
+    else { // currentMinutes > 30
+        targetTime.setMinutes(0, 0, 0); // Reset minutes, secs, ms
+        targetTime.setHours(targetTime.getHours() + 1); // Increment hour (handles day/month/year rollover)
+    }
+    // Format for input fields
+    const year = targetTime.getFullYear();
+    const month = (targetTime.getMonth() + 1).toString().padStart(2, '0');
+    const day = targetTime.getDate().toString().padStart(2, '0');
+    const hours = targetTime.getHours().toString().padStart(2, '0');
+    const minutes = targetTime.getMinutes().toString().padStart(2, '0');
+    formElements.date.value = `${year}-${month}-${day}`;
+    formElements.time.value = `${hours}:${minutes}`;
+    console.log(`Default time set to: ${hours}:${minutes}`);
+}
+export function closeModal() {
+    if (!modalOverlay)
+        return;
+    modalOverlay.classList.remove('visible');
+    resetForm();
+    currentEditingItemId = null;
+    currentModalMode = 'add';
+}
+function resetForm() {
+    if (!itemForm || !formElements)
+        return;
+    itemForm.reset();
+    formElements.recurringOptions.style.display = 'none';
+    formElements.id.value = '';
+    formElements.design.value = 'default';
+    formElements.recurrenceInterval.value = 'weekly';
+}
+function populateForm(itemData) {
+    if (!formElements)
+        return;
+    formElements.name.value = itemData.name || '';
+    formElements.category.value = itemData.category || 'Uncategorized';
+    formElements.note.value = itemData.note || '';
+    formElements.link.value = itemData.link || '';
+    formElements.design.value = itemData.design || 'default';
+    if (itemData.targetDate) {
+        try {
+            const { date, time } = formatDateTimeForInput(itemData.targetDate);
+            formElements.date.value = date;
+            formElements.time.value = time;
+        }
+        catch (e) {
+            console.error("Error formatting date/time during populateForm:", e);
+            formElements.date.value = '';
+            formElements.time.value = '';
+        }
+    }
+    else {
+        formElements.date.value = '';
+        formElements.time.value = '';
+    }
+    formElements.isRecurring.checked = !!itemData.isRecurring;
+    if (itemData.isRecurring) {
+        formElements.recurringOptions.style.display = 'grid';
+        formElements.recurrenceInterval.value = itemData.recurrenceInterval || 'weekly';
+        formElements.recurrenceEndDate.value = itemData.recurrenceEndDate
+            ? itemData.recurrenceEndDate.split('T')[0]
+            : '';
+    }
+    else {
+        formElements.recurringOptions.style.display = 'none';
+    }
+}
 // --- Rendering Functions ---
 export function renderCountdownList(items) {
-    listContainer.innerHTML = ''; // Clear existing items
-    categories.clear(); // Reset categories for this render cycle
-    categories.add('all'); // Always have 'all'
+    if (!listContainer) {
+        console.error("Cannot render list: List container missing.");
+        return;
+    }
+    const scrollY = window.scrollY;
+    listContainer.innerHTML = '';
+    categories.clear();
+    categories.add('all');
     const now = Date.now();
-    // Filter items based on the current category filter
     const filteredItems = items.filter(item => {
-        categories.add(item.category); // Collect all unique categories
+        categories.add(item.category);
         return categoryFilter === 'all' || item.category === categoryFilter;
     });
-    // Sort items: non-past first, then by target date ascending
     filteredItems.sort((a, b) => {
         const aIsPassed = new Date(a.targetDate).getTime() <= now;
         const bIsPassed = new Date(b.targetDate).getTime() <= now;
-        if (aIsPassed && !bIsPassed)
-            return 1; // a is past, b is not -> b comes first
-        if (!aIsPassed && bIsPassed)
-            return -1; // b is past, a is not -> a comes first
-        // Both past or both future: sort by target date
-        return new Date(a.targetDate).getTime() - new Date(b.targetDate).getTime();
+        if (!aIsPassed && !bIsPassed)
+            return new Date(a.targetDate).getTime() - new Date(b.targetDate).getTime();
+        else if (aIsPassed && bIsPassed)
+            return new Date(b.targetDate).getTime() - new Date(a.targetDate).getTime();
+        else if (!aIsPassed && bIsPassed)
+            return -1;
+        else
+            return 1;
     });
     if (filteredItems.length === 0) {
-        listContainer.innerHTML = '<p class="no-items">No countdowns here yet. Add one above!</p>';
+        listContainer.innerHTML = `<p class="no-items">No countdowns found${categoryFilter !== 'all' ? ` in category "${escapeHtml(categoryFilter)}"` : ''}. Add one!</p>`;
     }
     else {
         filteredItems.forEach(item => {
-            const itemElement = createCountdownElement(item);
-            listContainer.appendChild(itemElement);
+            try {
+                const itemElement = createCountdownElement(item);
+                listContainer.appendChild(itemElement);
+            }
+            catch (e) {
+                console.error(`Error creating element for item ${item.id} (${item.name}):`, e);
+            }
         });
     }
-    updateCategoryFilterOptions(); // Update dropdown with collected categories
+    updateCategoryFilterOptions();
+    window.scrollTo({ top: scrollY, behavior: 'instant' });
 }
 function createCountdownElement(item) {
     const element = document.createElement('div');
     element.classList.add('countdown-item', `design-${item.design}`);
     element.setAttribute('data-id', item.id);
     const targetDate = new Date(item.targetDate);
-    const timeRemainingMs = targetDate.getTime() - Date.now();
-    const isCurrentlyPast = timeRemainingMs <= 0;
-    if (isCurrentlyPast !== item.isPast) {
-        // This state should ideally be updated *before* rendering
-        // console.warn(`Mismatch detected for ${item.name}. Expected past: ${item.isPast}, Calculated past: ${isCurrentlyPast}`);
-        // Let's rely on the isPast flag passed into the function for styling consistency during updates
+    if (isNaN(targetDate.getTime())) {
+        console.error(`Invalid targetDate encountered for item ${item.id}: ${item.targetDate}`);
+        element.innerHTML = `<div class="item-header"><span class="item-name">INVALID ITEM DATA</span></div><p>Error: Invalid target date.</p>`;
+        element.classList.add('invalid-item');
+        return element;
     }
-    if (item.isPast) {
+    const timeRemainingMs = targetDate.getTime() - Date.now();
+    const isCurrentlyPast = item.isPast;
+    if (isCurrentlyPast) {
         element.classList.add('past');
     }
-    // Sanitize user input before inserting as HTML (simple example)
     const safeName = escapeHtml(item.name);
     const safeCategory = escapeHtml(item.category);
     const safeNote = escapeHtml(item.note || '');
     const safeLink = item.link ? escapeHtml(item.link) : '';
+    const linkHref = ensureHttp(item.link || '#');
+    // Action Buttons
+    const editButtonHtml = `<button class="edit-button" title="Edit Item">✏️</button>`;
+    const copyButtonHtml = `<button class="copy-button" title="Copy Item">📋</button>`;
+    // ** CHANGED: Always show Delete button, removed Dismiss button logic **
+    const deleteButtonHtml = `<button class="delete-button button-danger-subtle" title="Delete Item">🗑️</button>`; // Using emoji
     element.innerHTML = `
         <div class="item-header">
             <span class="item-name">${safeName}</span>
-            ${item.isPast ? '<button class="dismiss-button" title="Dismiss this item">×</button>' : ''}
+            <div class="item-actions">
+                 ${editButtonHtml}
+                 ${copyButtonHtml}
+                 ${deleteButtonHtml}
+            </div>
         </div>
         <div class="item-timer" data-target-date="${item.targetDate}">
-            ${formatTimeRemaining(timeRemainingMs)}
+            ${isCurrentlyPast ? 'Now!' : formatTimeRemaining(timeRemainingMs)}
         </div>
         <div class="item-target-date">
             Target: ${formatDisplayDate(item.targetDate)}
-            ${item.isRecurring ? `<span class="recurring-info">(Repeats ${item.recurrenceInterval})</span>` : ''}
+            ${item.isRecurring ? `<span class="recurring-info">(Repeats ${item.recurrenceInterval}${item.recurrenceEndDate ? ` until ${formatDisplayDate(item.recurrenceEndDate).split(',')[0]}` : ''})</span>` : ''}
         </div>
         <div class="item-details">
-            <span class="item-category">Category: ${safeCategory}</span>
-            ${safeNote ? `<p class="item-note">Note: ${safeNote.replace(/\n/g, '<br>')}</p>` : ''}
-            ${safeLink ? `<p class="item-link">Link: <a href="${ensureHttp(safeLink)}" target="_blank" rel="noopener noreferrer">${safeLink}</a></p>` : ''}
+            <span class="item-category">${safeCategory}</span>
+            ${safeNote ? `<p class="item-note"><strong>Note:</strong> ${safeNote.replace(/\n/g, '<br>')}</p>` : ''}
+            ${safeLink ? `<p class="item-link"><strong>Link:</strong> <a href="${linkHref}" target="_blank" rel="noopener noreferrer">${safeLink}</a></p>` : ''}
+            <p class="item-created"><em>Added: ${formatDisplayDate(item.createdAt)}</em></p>
         </div>
     `;
     return element;
 }
 export function updateTimers(items) {
-    const itemElements = listContainer.querySelectorAll('.countdown-item');
+    if (!listContainer)
+        return;
+    const itemElements = listContainer.querySelectorAll('.countdown-item:not(.past)');
+    const now = Date.now();
     itemElements.forEach(element => {
         const id = element.getAttribute('data-id');
         const timerElement = element.querySelector('.item-timer');
         const targetDateStr = timerElement === null || timerElement === void 0 ? void 0 : timerElement.getAttribute('data-target-date');
         if (id && timerElement && targetDateStr) {
-            const item = items.find(i => i.id === id); // Find corresponding item data
-            if (item && !item.isPast) { // Only update timers for non-past items actively
+            try {
                 const targetDate = new Date(targetDateStr);
-                const timeRemainingMs = targetDate.getTime() - Date.now();
-                timerElement.textContent = formatTimeRemaining(timeRemainingMs);
+                if (isNaN(targetDate.getTime()))
+                    return;
+                const timeRemainingMs = targetDate.getTime() - now;
+                timerElement.textContent = (timeRemainingMs > 0) ? formatTimeRemaining(timeRemainingMs) : "Now!";
             }
-            else if (item && item.isPast && !element.classList.contains('past')) {
-                // If item became past but element doesn't reflect it yet (rare race condition?)
-                element.classList.add('past');
-                timerElement.textContent = "Now!";
-                // Add dismiss button if missing
-                if (!element.querySelector('.dismiss-button')) {
-                    const header = element.querySelector('.item-header');
-                    const dismissButton = document.createElement('button');
-                    dismissButton.className = 'dismiss-button';
-                    dismissButton.title = 'Dismiss this item';
-                    dismissButton.textContent = '×';
-                    header === null || header === void 0 ? void 0 : header.appendChild(dismissButton);
-                }
+            catch (e) {
+                console.error("Error updating timer for item:", id, e);
             }
         }
     });
 }
 function updateCategoryFilterOptions() {
-    // Preserve current selection if possible
+    if (!categoryFilterSelect)
+        return;
     const currentSelection = categoryFilterSelect.value;
-    // Clear existing options except the default "All"
     while (categoryFilterSelect.options.length > 1) {
         categoryFilterSelect.remove(1);
     }
-    // Sort categories alphabetically for display
-    const sortedCategories = Array.from(categories).filter(cat => cat !== 'all').sort();
+    const sortedCategories = Array.from(categories).filter(cat => cat !== 'all').sort((a, b) => a.localeCompare(b));
     sortedCategories.forEach(category => {
         const option = document.createElement('option');
         option.value = category;
         option.textContent = category;
         categoryFilterSelect.appendChild(option);
     });
-    // Restore previous selection if it still exists
     if (Array.from(categoryFilterSelect.options).some(opt => opt.value === currentSelection)) {
         categoryFilterSelect.value = currentSelection;
     }
     else {
-        // If the previous selection is gone (e.g., last item of that category deleted), default to "all"
         categoryFilterSelect.value = 'all';
-        categoryFilter = 'all'; // Update internal state too
+        categoryFilter = 'all';
     }
 }
 // --- Helper Functions ---
 function escapeHtml(unsafe) {
-    if (!unsafe) {
-        return ""; // Handle null or undefined gracefully
+    if (!unsafe)
+        return "";
+    try {
+        const div = document.createElement('div');
+        div.textContent = unsafe;
+        let escaped = div.innerHTML;
+        escaped = escaped.replace(/'/g, '\'');
+        return escaped;
     }
-    let safe = unsafe;
-    // Replace characters one by one
-    safe = safe.replace(/&/g, "&"); // Must be first
-    safe = safe.replace(/</g, "<");
-    safe = safe.replace(/>/g, ">");
-    safe = safe.replace(/"/g, "\"");
-    safe = safe.replace(/'/g, "'"); // Escapes single quotes
-    return safe;
+    catch (e) {
+        console.warn("DOM escaping failed, using basic regex replace.");
+        return unsafe
+            .replace(/&/g, "&")
+            .replace(/</g, "<")
+            .replace(/>/g, ">")
+            .replace(/"/g, "\"")
+            .replace(/'/g, "'");
+    }
 }
 function ensureHttp(link) {
-    if (!link)
-        return '#'; // Return '#' or empty string if link is empty
-    if (!/^https?:\/\//i.test(link)) {
-        return `http://${link}`; // Add http:// if no protocol exists
+    if (!link || link === '#')
+        return '#';
+    if (!/^(https?:\/\/|mailto:|tel:)/i.test(link)) {
+        if (link.includes('.') && !link.includes(' ') && !link.startsWith('/')) {
+            return `http://${link}`;
+        }
+        return link;
     }
     return link;
 }

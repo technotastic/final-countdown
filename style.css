@@ -9,11 +9,15 @@
     --primary-color: #3498db;
     --secondary-color: #2ecc71;
     --danger-color: #e74c3c;
-    --light-color: #f4f4f4;
-    --dark-color: #333;
-    --medium-gray: #ccc;
+    --warning-color: #f39c12;
+    --light-color: #f8f9fa; /* Slightly lighter background */
+    --white-color: #fff;
+    --dark-color: #343a40; /* Darker text */
+    --medium-gray: #adb5bd;
+    --light-gray: #dee2e6;
     --border-radius: 5px;
-    --box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    --box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    --modal-z-index: 1000;
     font-size: 16px; /* Base font size */
 }
 
@@ -26,44 +30,145 @@ body {
 }
 
 header, main, footer {
-    max-width: 900px;
+    max-width: 1100px; /* Slightly wider */
     margin: 1rem auto;
     padding: 1rem;
 }
 
 header {
     text-align: center;
-    margin-bottom: 2rem;
-    border-bottom: 1px solid var(--medium-gray);
+    margin-bottom: 1.5rem;
     padding-bottom: 1rem;
 }
 
 h1 {
     color: var(--primary-color);
     margin-bottom: 0.5rem;
+    font-size: 2.2rem; /* Slightly larger */
 }
 
 h2 {
     margin-bottom: 1rem;
     color: var(--dark-color);
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--light-gray);
     padding-bottom: 0.5rem;
+    font-size: 1.5rem;
 }
 
 section {
-    background-color: #fff;
-    padding: 1.5rem;
+    /* Remove background/shadow from sections, apply to list items directly */
     margin-bottom: 1.5rem;
-    border-radius: var(--border-radius);
-    box-shadow: var(--box-shadow);
 }
 
-/* --- Forms --- */
+/* --- Buttons --- */
+button, .button { /* Add .button class for link styling */
+    padding: 0.6rem 1.2rem;
+    border: none;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 500;
+    text-decoration: none;
+    display: inline-block;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease;
+    line-height: 1.5; /* Ensure text vertical alignment */
+}
+button:active, .button:active {
+    transform: translateY(1px);
+}
+button:disabled, .button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.button-primary {
+    background-color: var(--primary-color);
+    color: var(--white-color);
+}
+.button-primary:hover {
+    background-color: #2980b9;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+}
+
+.button-secondary {
+    background-color: #6c757d; /* Bootstrap secondary grey */
+    color: var(--white-color);
+}
+.button-secondary:hover {
+    background-color: #5a6268;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+}
+.button-danger {
+    background-color: var(--danger-color);
+    color: var(--white-color);
+}
+.button-danger:hover {
+    background-color: #c82333;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+}
+.button-warning {
+    background-color: var(--warning-color);
+    color: var(--white-color);
+}
+.button-warning:hover {
+    background-color: #e0a800;
+     box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+}
+
+/* Item action buttons (Edit, Copy, Dismiss) */
+.item-actions button {
+    background: none;
+    border: none;
+    padding: 0.2rem 0.4rem;
+    font-size: 1rem; /* Make icons/text slightly larger */
+    cursor: pointer;
+    color: #6c757d; /* Default grey */
+    line-height: 1;
+    transition: color 0.2s ease;
+}
+.item-actions button:hover {
+    color: var(--dark-color);
+}
+.item-actions .dismiss-button {
+    font-size: 1.4rem; /* Make dismiss X larger */
+    color: var(--medium-gray);
+}
+.item-actions .dismiss-button:hover {
+     color: var(--danger-color);
+}
+/* Add this rule (or modify existing .item-actions button styles) */
+.item-actions .delete-button {
+    color: var(--medium-gray); /* Start subtle */
+    font-size: 1.1rem; /* Adjust size if needed */
+}
+.item-actions .delete-button:hover {
+    color: var(--danger-color); /* Red on hover */
+}
+
+/* You might want to add a specific class for better styling control */
+.button-danger-subtle {
+   /* Define specific subtle danger styles if needed */
+   background: none;
+   border: none;
+   padding: 0.2rem 0.4rem;
+   font-size: 1rem;
+   cursor: pointer;
+   color: var(--medium-gray);
+   line-height: 1;
+   transition: color 0.2s ease;
+}
+.button-danger-subtle:hover {
+    color: var(--danger-color);
+}
+/* --- Forms (Inside Modal) --- */
+#item-form {
+    /* Form styles apply within the modal context */
+}
 .form-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 1rem;
-    margin-bottom: 1rem;
+    margin-bottom: 1.5rem;
 }
 
 .form-group {
@@ -72,19 +177,22 @@ section {
 }
 
 .form-group-checkbox {
+    grid-column: 1 / -1; /* Span full width */
     flex-direction: row;
     align-items: center;
-    grid-column: 1 / -1; /* Span full width initially */
+    margin-top: 0.5rem;
 }
 .form-group-checkbox label {
+     margin-bottom: 0; /* Reset default bottom margin for label */
      margin-left: 0.5rem;
-     margin-bottom: 0; /* Reset bottom margin */
+     font-weight: normal; /* Normal weight for checkbox label */
 }
 
 label {
     margin-bottom: 0.3rem;
     font-weight: bold;
     font-size: 0.9rem;
+    color: #495057; /* Slightly darker label text */
 }
 
 input[type="text"],
@@ -94,115 +202,115 @@ input[type="url"],
 textarea,
 select {
     width: 100%;
-    padding: 0.7rem;
-    border: 1px solid var(--medium-gray);
+    padding: 0.6rem 0.8rem;
+    border: 1px solid var(--light-gray);
     border-radius: var(--border-radius);
     font-size: 1rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
-input[type="checkbox"] {
-    width: auto;
+input:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.25);
 }
 
+input[type="checkbox"] {
+    width: auto;
+    accent-color: var(--primary-color); /* Style checkbox */
+}
 
 #recurring-options {
     grid-column: 1 / -1; /* Span full width */
-    display: grid; /* Use grid for inner layout too */
+    display: grid;
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 1rem;
-    border-top: 1px dashed var(--medium-gray);
+    border-top: 1px dashed var(--light-gray);
     margin-top: 1rem;
     padding-top: 1rem;
 }
 
-button[type="submit"] {
-    background-color: var(--primary-color);
-    color: #fff;
-    padding: 0.8rem 1.5rem;
-    border: none;
+/* --- List Controls (Add button, Filter, Import/Export) --- */
+.list-controls {
+    background-color: var(--white-color);
+    padding: 1rem 1.5rem;
     border-radius: var(--border-radius);
-    cursor: pointer;
-    font-size: 1rem;
-    transition: background-color 0.2s ease;
-    display: block; /* Make it block to center easily if needed */
-    width: 100%;
-    margin-top: 1rem; /* Space above button */
-}
-button[type="submit"]:hover {
-    background-color: #2980b9;
+    box-shadow: var(--box-shadow);
+    margin-bottom: 1.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+    justify-content: space-between;
 }
 
-/* --- Controls (Filter/Export/Import) --- */
-.list-controls .filter-export-import {
+.main-actions {
     display: flex;
-    flex-wrap: wrap; /* Allow wrapping on small screens */
-    justify-content: space-between;
-    align-items: flex-end; /* Align items to bottom */
-    gap: 1rem;
-    margin-bottom: 1rem;
-}
-.list-controls .form-group {
-    margin-bottom: 0; /* Remove default bottom margin */
-    flex-grow: 1; /* Allow filter to take available space */
-     min-width: 200px; /* Ensure filter is not too small */
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
 }
 
 .import-export-buttons {
     display: flex;
     gap: 0.5rem;
-    flex-shrink: 0; /* Prevent buttons from shrinking too much */
 }
 
-.import-export-buttons button {
-     background-color: var(--secondary-color);
-     color: #fff;
-     padding: 0.6rem 1rem;
-     border: none;
-     border-radius: var(--border-radius);
-     cursor: pointer;
-     font-size: 0.9rem;
-     transition: background-color 0.2s ease;
+.filter-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-grow: 1; /* Allow filter to take up space */
+    min-width: 200px; /* Prevent filter becoming too small */
+    justify-content: flex-end; /* Align filter to the right on wider screens */
 }
-.import-export-buttons button:hover {
-    background-color: #27ae60;
+.filter-controls label {
+    margin-bottom: 0; /* Remove margin */
+    font-weight: normal;
 }
-#export-button {
-    background-color: #f39c12; /* Orange for export */
-}
-#export-button:hover {
-    background-color: #e67e22;
+.filter-controls select {
+    max-width: 250px; /* Limit filter width */
 }
 
 
-/* --- Countdown List --- */
+/* --- Countdown List Container --- */
+#countdown-list-container h2 {
+    margin-left: 0.5rem; /* Align heading with list padding */
+}
+
 #countdown-list {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Responsive grid */
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Responsive grid, slightly larger min */
     gap: 1rem;
 }
 .no-items, .loading {
-    text-align: center;
-    color: #777;
-    padding: 2rem;
     grid-column: 1 / -1; /* Span full width */
+    text-align: center;
+    color: #6c757d;
+    padding: 3rem 1rem;
+    background-color: var(--white-color);
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
 }
 
 /* --- Countdown Item (Base & Default Style) --- */
 .countdown-item {
-    background-color: #fff;
-    border: 1px solid var(--medium-gray);
+    background-color: var(--white-color);
+    border: 1px solid var(--light-gray);
     border-left: 5px solid var(--primary-color);
-    padding: 1rem;
+    padding: 1rem 1.2rem; /* Slightly more padding */
     border-radius: var(--border-radius);
     box-shadow: var(--box-shadow);
     transition: all 0.3s ease;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem; /* Space between elements inside the item */
+    gap: 0.6rem; /* Space between elements inside the item */
+    position: relative; /* For absolute positioning of buttons if needed */
 }
 
 .countdown-item.past {
-    opacity: 0.7;
+    opacity: 0.75;
     border-left-color: var(--danger-color);
+    background-color: #fdfdfe; /* Slightly off-white when past */
 }
 .countdown-item.past .item-timer {
     color: var(--danger-color);
@@ -213,35 +321,30 @@ button[type="submit"]:hover {
 .item-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.5rem; /* Space below header */
+    align-items: flex-start; /* Align items to top */
+    margin-bottom: 0.2rem; /* Reduced space below header */
 }
 
 .item-name {
-    font-size: 1.2rem;
-    font-weight: bold;
-    color: var(--primary-color);
+    font-size: 1.25rem;
+    font-weight: 600; /* Slightly bolder */
+    color: var(--dark-color);
+    margin-right: 4rem; /* Ensure space for buttons */
     word-break: break-word; /* Prevent long names from overflowing */
 }
 
-.dismiss-button {
-    background: none;
-    border: none;
-    color: var(--danger-color);
-    font-size: 1.5rem;
-    font-weight: bold;
-    cursor: pointer;
-    padding: 0 0.5rem;
-    line-height: 1;
-}
-.dismiss-button:hover {
-    color: #c0392b; /* Darker red */
+.item-actions {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    display: flex;
+    gap: 0.3rem;
 }
 
 .item-timer {
-    font-size: 1.8rem;
+    font-size: 2rem; /* Larger timer */
     font-weight: bold;
-    color: var(--dark-color);
+    color: var(--primary-color);
     text-align: center;
     margin: 0.5rem 0;
     font-family: 'Courier New', Courier, monospace; /* Monospaced font for timer */
@@ -255,23 +358,29 @@ button[type="submit"]:hover {
 .recurring-info {
     font-style: italic;
     margin-left: 0.5em;
+    color: #6c757d;
 }
 
 .item-details {
     margin-top: 0.5rem;
     font-size: 0.9rem;
-    color: #666;
-    border-top: 1px dashed var(--medium-gray);
-    padding-top: 0.5rem;
+    color: #495057;
+    border-top: 1px dashed var(--light-gray);
+    padding-top: 0.75rem;
 }
 .item-category {
      font-weight: bold;
-     display: block;
-     margin-bottom: 0.3rem;
+     display: inline-block; /* Allow inline display */
+     background-color: #e9ecef; /* Light grey background */
+     padding: 0.2rem 0.5rem;
+     border-radius: var(--border-radius);
+     font-size: 0.8rem;
+     margin-bottom: 0.5rem;
 }
 .item-note, .item-link {
-    margin-top: 0.3rem;
-    word-break: break-word;
+    margin-top: 0.4rem;
+    word-wrap: break-word; /* Ensure long URLs/notes wrap */
+    line-height: 1.4;
 }
 .item-link a {
     color: var(--primary-color);
@@ -280,62 +389,64 @@ button[type="submit"]:hover {
 .item-link a:hover {
     text-decoration: underline;
 }
-
+.item-note strong, .item-link strong {
+    color: var(--dark-color);
+}
 
 /* --- Design Variations --- */
 
 /* Compact Style */
 .countdown-item.design-compact {
-    padding: 0.7rem;
-    border-left-width: 3px;
-    gap: 0.3rem;
+    padding: 0.8rem;
+    border-left-width: 4px;
+    gap: 0.4rem;
 }
 .countdown-item.design-compact .item-name {
-    font-size: 1rem;
+    font-size: 1.1rem;
 }
 .countdown-item.design-compact .item-timer {
-    font-size: 1.3rem;
-    margin: 0.2rem 0;
+    font-size: 1.6rem;
+    margin: 0.3rem 0;
 }
 .countdown-item.design-compact .item-target-date {
     font-size: 0.8rem;
 }
 .countdown-item.design-compact .item-details {
-    display: none; /* Hide details by default in compact view */
+    font-size: 0.85rem;
+    margin-top: 0.4rem;
+    padding-top: 0.5rem;
 }
-/* Maybe show details on hover/focus? */
-.countdown-item.design-compact:hover .item-details {
-    display: block;
-     font-size: 0.85rem;
-     margin-top: 0.4rem;
-     padding-top: 0.4rem;
+.countdown-item.design-compact .item-actions {
+    top: 0.5rem;
+    right: 0.5rem;
 }
-
 
 /* Card Style */
 .countdown-item.design-card {
-    border: none; /* Remove side border */
-    border-top: 5px solid var(--secondary-color); /* Top border instead */
+    border: 1px solid var(--light-gray); /* Keep subtle border */
+    border-top: 5px solid var(--secondary-color); /* Top border color */
     text-align: center;
+    border-left: none; /* Remove left border */
 }
 .countdown-item.design-card.past {
      border-top-color: var(--danger-color);
 }
 .countdown-item.design-card .item-header {
     justify-content: center; /* Center name */
-    position: relative; /* For absolute positioning dismiss button */
-}
-.countdown-item.design-card .dismiss-button {
-    position: absolute;
-    top: -5px; /* Adjust position */
-    right: 0;
+    margin-bottom: 0.5rem;
 }
 .countdown-item.design-card .item-name {
-    color: var(--dark-color); /* Different name color */
-    font-size: 1.1rem;
+    color: var(--dark-color);
+    font-size: 1.2rem;
+    margin-right: 0; /* No need for margin when centered */
+}
+.countdown-item.design-card .item-actions {
+    top: 0.5rem;
+    right: 0.5rem;
+    /* Buttons already positioned absolutely */
 }
 .countdown-item.design-card .item-timer {
-    font-size: 2rem;
+    font-size: 2.2rem;
     color: var(--secondary-color);
     margin: 0.8rem 0;
 }
@@ -345,41 +456,177 @@ button[type="submit"]:hover {
 .countdown-item.design-card .item-details {
     border-top: 1px solid #eee;
     font-size: 0.85rem;
+    padding-top: 0.75rem;
 }
+.countdown-item.design-card .item-category {
+    display: inline-block; /* Center category badge */
+}
+
+
+/* --- Modal Styles --- */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6); /* Darker overlay */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: var(--modal-z-index);
+    opacity: 0; /* Hidden by default */
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0s linear 0.3s;
+}
+.modal-overlay.visible {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.3s ease, visibility 0s linear 0s;
+}
+
+.modal-content {
+    background-color: var(--white-color);
+    padding: 2rem;
+    border-radius: var(--border-radius);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    width: 90%;
+    max-width: 650px; /* Max width for the modal */
+    max-height: 90vh; /* Max height */
+    overflow-y: auto; /* Allow scrolling if content overflows */
+    position: relative;
+    transform: scale(0.95);
+    transition: transform 0.3s ease;
+}
+.modal-overlay.visible .modal-content {
+     transform: scale(1);
+}
+
+.modal-content h2 {
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.modal-close {
+    position: absolute;
+    top: 0.75rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    font-size: 2rem;
+    color: var(--medium-gray);
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+}
+.modal-close:hover {
+    color: var(--dark-color);
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+    border-top: 1px solid var(--light-gray);
+    padding-top: 1rem;
+}
+
 
 /* --- Footer --- */
 footer {
     text-align: center;
     margin-top: 3rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--medium-gray);
-    color: #777;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--light-gray);
+    color: #6c757d;
     font-size: 0.9rem;
 }
 
 /* --- Responsive Adjustments --- */
+@media (max-width: 768px) {
+    h1 {
+        font-size: 1.9rem;
+    }
+    .list-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .filter-controls {
+         justify-content: flex-start; /* Align filter left */
+         width: 100%;
+    }
+     .filter-controls select {
+        max-width: none; /* Allow filter to take full width */
+    }
+    .main-actions {
+        width: 100%;
+        justify-content: space-between; /* Space out add/import/export */
+    }
+     .import-export-buttons button {
+         padding: 0.5rem 0.8rem; /* Smaller buttons on mobile */
+         font-size: 0.9rem;
+     }
+     #add-new-button {
+          font-size: 0.95rem;
+     }
+}
+
+
 @media (max-width: 600px) {
     body {
         padding: 0.5rem;
+        font-size: 15px; /* Slightly smaller base font */
     }
     header, main, footer {
         padding: 0.5rem;
         margin: 0.5rem auto;
     }
     h1 {
-        font-size: 1.8rem;
+        font-size: 1.7rem;
     }
     .form-grid {
         grid-template-columns: 1fr; /* Stack form fields */
     }
-     #countdown-list {
+    #countdown-list {
         grid-template-columns: 1fr; /* Stack items */
+        gap: 0.8rem;
     }
-    .list-controls .filter-export-import {
-        flex-direction: column; /* Stack filter and buttons */
-        align-items: stretch; /* Make filter/buttons full width */
+    .countdown-item {
+        padding: 0.8rem;
     }
-     .import-export-buttons {
-         justify-content: space-around; /* Space out buttons */
+     .countdown-item .item-name {
+         font-size: 1.1rem;
+         margin-right: 3.5rem; /* Adjust space for buttons */
+     }
+     .countdown-item .item-timer {
+          font-size: 1.7rem;
+     }
+     .item-actions {
+         top: 0.6rem;
+         right: 0.6rem;
+     }
+      .item-actions button {
+         font-size: 0.9rem;
+     }
+     .item-actions .dismiss-button {
+         font-size: 1.2rem;
+     }
+
+    .modal-content {
+        padding: 1.5rem;
+        width: 95%;
+    }
+     .modal-close {
+         font-size: 1.8rem;
+         top: 0.5rem;
+         right: 0.7rem;
+     }
+     .modal-actions {
+         flex-direction: column-reverse; /* Stack buttons vertically */
+     }
+     .modal-actions button {
+         width: 100%;
      }
 }
