@@ -57,8 +57,10 @@
 body[data-theme="retro"] {
     --bg-color: #000000;
     --text-color: #FFFFFF;
-    --text-color-light: #bbbbbb;
-    --text-color-lighter: #888888;
+    /* --- CHANGE: Brighter secondary/tertiary text --- */
+    --text-color-light: #cccccc;   /* Was #bbbbbb */
+    --text-color-lighter: #aaaaaa; /* Was #888888, then #aaaaaa - keep */
+    /* --- End Change --- */
     --link-color: #00FFFF; /* Cyan */
     --link-hover-color: #FFFF00; /* Yellow */
 
@@ -210,7 +212,9 @@ body[data-theme="retro"] button:disabled, body[data-theme="retro"] .button:disab
     color: var(--button-primary-text); /* Ensure text stays correct on hover */
 }
 body[data-theme="retro"] .button-primary:hover {
-     color: var(--bg-color); /* Retro hover text color */
+     /* --- CHANGE: Explicit hover text color --- */
+     color: var(--bg-color); /* Black text on Cyan bg */
+     /* --- End Change --- */
 }
 
 
@@ -225,7 +229,9 @@ body[data-theme="retro"] .button-primary:hover {
     color: var(--button-secondary-text);
 }
 body[data-theme="retro"] .button-secondary:hover {
-      color: var(--bg-color); /* Retro hover text color */
+      /* --- CHANGE: Explicit hover text color --- */
+      color: var(--bg-color); /* Black text on Magenta bg */
+      /* --- End Change --- */
 }
 
 /* Theme Toggle Specific */
@@ -460,6 +466,7 @@ body[data-theme="retro"] .filter-controls label {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 1rem;
+    min-height: 100px;
 }
 .no-items, .loading {
     grid-column: 1 / -1;
@@ -484,67 +491,73 @@ body[data-theme="retro"] .no-items, body[data-theme="retro"] .loading {
     padding: 1rem 1.2rem;
     border-radius: var(--card-radius);
     box-shadow: var(--card-shadow);
-    transition: all var(--transition-speed) ease; /* Keep smooth for default */
     display: flex;
     flex-direction: column;
     gap: 0.6rem;
-    position: relative; /* For absolute positioning of actions */
-
-    /* Basic Resizing */
-    resize: both; /* Allow user resizing */
-    overflow: auto; /* Needed for resize handle */
-    min-width: 280px; /* Prevent resizing too small */
-    min-height: 150px;
-}
-body[data-theme="retro"] .countdown-item {
-     transition: none; /* No smooth transition */
-     border-width: var(--border-width-thick);
-     border-left: var(--border-width-thick) solid var(--primary-color); /* Retro needs explicit left border */
-     resize: none; /* Disable CSS resize for retro, clashes with style */
-     overflow: visible; /* Ensure content isn't cut off */
+    position: relative;
+    overflow: hidden;
+    cursor: grab;
 }
 
-.countdown-item.past {
-    opacity: 0.75;
-}
-body[data-theme="retro"] .countdown-item.past {
-    opacity: 0.6;
-    border-color: var(--secondary-color); /* Magenta border when past */
-}
+/* Define fixed sizes (adjust as needed) */
+.countdown-item.design-default { min-height: 160px; }
+.countdown-item.design-compact { padding: 0.8rem; gap: 0.4rem; min-height: 120px; }
+.countdown-item.design-card { border: var(--border-width) solid var(--border-color); border-top: var(--border-width-thick) solid var(--accent-color); text-align: center; min-height: 180px; border-left: var(--border-width) solid var(--border-color); }
+.countdown-item.design-card.past { border-top-color: var(--danger-color); }
+.countdown-item.design-retro-box { min-height: 150px; border-color: var(--accent-color); background-color: rgba(20, 20, 20, 0.6); box-shadow: var(--border-width) var(--border-width) 0px var(--primary-color); }
+.countdown-item.design-retro-box .item-name { color: var(--primary-color); }
+body:not([data-theme="retro"]) .countdown-item.design-retro-box { min-height: 160px; border-left: 5px solid var(--primary-color); }
 
+/* Retro theme base overrides for countdown item */
+body[data-theme="retro"] .countdown-item { transition: none; border-width: var(--border-width-thick); border-left: var(--border-width-thick) solid var(--primary-color); resize: none; overflow: hidden; cursor: grab; }
+body[data-theme="retro"] .countdown-item.design-card { border-width: var(--border-width-thick); border-top-width: var(--border-width-thick); border-left-width: var(--border-width-thick); }
+
+.countdown-item.past { opacity: 0.75; }
+body[data-theme="retro"] .countdown-item.past { opacity: 0.6; border-color: var(--secondary-color); }
+
+/* --- CHANGE: Use Flexbox for Header Layout --- */
 .item-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start; /* Align buttons top right */
+    display: flex; /* Use Flexbox */
+    justify-content: space-between; /* Push name and actions apart */
+    align-items: flex-start; /* Align items to the top */
+    gap: 0.5rem; /* Add some gap between name and actions if they wrap */
     margin-bottom: 0.2rem;
-    min-height: 2em; /* Ensure header has some height for button positioning */
+    min-height: 1.5em; /* Can be smaller now */
 }
 
 .item-name {
     font-size: 1.25rem;
     font-weight: 600;
     color: var(--text-color);
-    margin-right: 5rem; /* Ensure space for buttons */
+    /* margin-right: 0; */ /* Removed margin */
+    /* padding-right: 0; */ /* Removed padding */
     word-break: break-word;
+    flex-grow: 1; /* Allow name to take up available space */
+    /* Limit width slightly less than 100% if needed, but flex should handle it */
+    /* max-width: calc(100% - 5rem); Example if flex-grow isn't enough */
 }
 body[data-theme="retro"] .item-name {
-     color: var(--accent-color); /* Yellow name */
+     color: var(--accent-color);
      font-size: 1.1em;
 }
 
 
 .item-actions {
-    position: absolute;
-    top: 0.75rem; /* Position from top */
-    right: 0.75rem; /* Position from right */
+    /* position: absolute; */ /* Removed absolute positioning */
+    /* top: 0.75rem; */
+    /* right: 0.75rem; */
+    /* z-index: 2; */
     display: flex;
     gap: 0.4rem;
-    z-index: 2; /* Ensure buttons are above other content */
+    flex-shrink: 0; /* Prevent buttons from shrinking */
 }
+/* Keep retro positioning adjustments relative to header if needed, */
+/* but likely not necessary with flexbox */
 body[data-theme="retro"] .item-actions {
-    top: 8px;
-    right: 8px;
+     /* top: 8px; */ /* Removed */
+     /* right: 8px; */ /* Removed */
 }
+/* --- End Flexbox Change --- */
 
 
 .item-timer {
@@ -600,14 +613,16 @@ body[data-theme="retro"] .item-details {
      margin-bottom: 0.5rem;
      color: var(--text-color-light);
 }
+/* --- CHANGE: Retro category badge colors --- */
 body[data-theme="retro"] .item-category {
-    background-color: var(--secondary-color);
-    color: var(--bg-color);
+    background-color: var(--primary-color); /* Cyan background */
+    color: var(--bg-color); /* Black text */
     font-size: 0.7em;
     padding: 3px 6px;
     border: none;
-    box-shadow: 2px 2px 0px var(--primary-color);
+    box-shadow: 2px 2px 0px var(--secondary-color); /* Magenta shadow */
 }
+/* --- End Change --- */
 
 .item-note, .item-link { margin-top: 0.4rem; word-wrap: break-word; line-height: 1.4; }
 .item-note strong, .item-link strong { color: var(--text-color); }
@@ -619,181 +634,53 @@ body[data-theme="retro"] .item-note strong, body[data-theme="retro"] .item-link 
 .item-link a:hover { color: var(--link-hover-color); text-decoration: underline; }
 body[data-theme="retro"] .item-link a:hover { text-decoration: none; background-color: var(--accent-color); color: var(--bg-color);}
 
-.item-created { font-size: 0.8rem; color: var(--text-color-lighter); margin-top: 0.5rem; }
-
-
-/* --- Design Variations --- */
-/* Compact Style */
-.countdown-item.design-compact { /* Adapt compact for theming */
-    padding: 0.8rem;
-    gap: 0.4rem;
-}
-/* Add specific overrides for compact in retro if needed */
-
-
-/* Card Style */
-.countdown-item.design-card { /* Adapt card for theming */
-    border: var(--border-width) solid var(--border-color);
-    border-top: var(--border-width-thick) solid var(--accent-color); /* Use accent color */
-    text-align: center;
-    border-left: var(--border-width) solid var(--border-color); /* Ensure sides match */
-}
-.countdown-item.design-card.past {
-     border-top-color: var(--danger-color);
-}
-/* Add specific overrides for card in retro if needed */
-body[data-theme="retro"] .countdown-item.design-card {
-     border-width: var(--border-width-thick);
-     border-top-width: var(--border-width-thick); /* Already thick */
-     border-left-width: var(--border-width-thick);
+.item-created {
+    font-size: 0.8rem;
+    color: var(--text-color-lighter); /* Using the updated variable */
+    margin-top: 0.5rem;
 }
 
 
-/* NEW Retro Box Style */
-.countdown-item.design-retro-box {
-    /* Inherits base retro styles, maybe add specific border/bg */
-     border-color: var(--accent-color); /* Yellow border */
-     background-color: rgba(20, 20, 20, 0.6); /* Slightly different dark bg */
-     box-shadow: var(--border-width) var(--border-width) 0px var(--primary-color); /* Cyan shadow */
-}
-.countdown-item.design-retro-box .item-name {
-     color: var(--primary-color); /* Cyan name */
-}
-/* Only apply retro-box style if theme is retro */
-body:not([data-theme="retro"]) .countdown-item.design-retro-box {
-     /* Fallback to default style if retro theme isn't active */
-     border-left: 5px solid var(--primary-color); /* Replicate default style */
-     resize: both;
-     overflow: auto;
-}
+/* --- SortableJS Styles --- */
+.sortable-ghost { opacity: 0.4; background-color: #c8ebfb; border: 1px dashed var(--primary-color); border-radius: var(--card-radius); }
+body[data-theme="retro"] .sortable-ghost { background-color: var(--secondary-color); border: var(--border-width-thick) dashed var(--primary-color); opacity: 0.6; }
+.sortable-chosen { box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2); cursor: grabbing; opacity: 0.9; }
+body[data-theme="retro"] .sortable-chosen { box-shadow: var(--border-width-thick) var(--border-width-thick) 0px var(--accent-color); opacity: 0.8; }
+.sortable-drag { /* Optional: styles for the item clone while dragging */ }
 
 
 /* --- Modal Styles --- */
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: var(--modal-overlay-bg);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.3s ease, visibility 0s linear 0.3s; /* Default smooth transition */
-}
-body[data-theme="retro"] .modal-overlay {
-     transition: none; /* No smooth transition */
-}
-
-.modal-overlay.visible {
-    opacity: 1;
-    visibility: visible;
-    transition: opacity 0.3s ease, visibility 0s linear 0s;
-}
-body[data-theme="retro"] .modal-overlay.visible {
-     transition: none;
-}
-
-.modal-content {
-    background-color: var(--modal-bg);
-    padding: 2rem;
-    border-radius: var(--card-radius);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-    width: 90%;
-    max-width: 650px;
-    max-height: 90vh;
-    overflow-y: auto;
-    position: relative;
-    border: var(--border-width) solid var(--border-color);
-    transform: scale(0.95); /* Default scale transition */
-    transition: transform 0.3s ease;
-}
-body[data-theme="retro"] .modal-content {
-     border-width: var(--border-width-thick);
-     transform: none; /* No scale effect */
-     transition: none;
-     box-shadow: var(--border-width-thick) var(--border-width-thick) 0px var(--accent-color);
-}
-
-.modal-overlay.visible .modal-content {
-     transform: scale(1);
-}
-body[data-theme="retro"] .modal-overlay.visible .modal-content {
-     transform: none;
-}
-
-
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--modal-overlay-bg); display: flex; justify-content: center; align-items: center; z-index: 1000; opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0s linear 0.3s; }
+body[data-theme="retro"] .modal-overlay { transition: none; }
+.modal-overlay.visible { opacity: 1; visibility: visible; transition: opacity 0.3s ease, visibility 0s linear 0s; }
+body[data-theme="retro"] .modal-overlay.visible { transition: none; }
+.modal-content { background-color: var(--modal-bg); padding: 2rem; border-radius: var(--card-radius); box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2); width: 90%; max-width: 650px; max-height: 90vh; overflow-y: auto; position: relative; border: var(--border-width) solid var(--border-color); transform: scale(0.95); transition: transform 0.3s ease; }
+body[data-theme="retro"] .modal-content { border-width: var(--border-width-thick); transform: none; transition: none; box-shadow: var(--border-width-thick) var(--border-width-thick) 0px var(--accent-color); }
+.modal-overlay.visible .modal-content { transform: scale(1); }
+body[data-theme="retro"] .modal-overlay.visible .modal-content { transform: none; }
 .modal-content h2 { text-align: center; margin-top: 0; margin-bottom: 1.5rem;}
-
-.modal-close {
-    position: absolute;
-    top: 0.75rem;
-    right: 1rem;
-    background: none;
-    border: none;
-    font-size: 2rem;
-    color: var(--text-color-lighter);
-    cursor: pointer;
-    line-height: 1;
-    padding: 0;
-    transition: color var(--transition-speed);
-    font-family: Arial, sans-serif; /* Use a standard font for X */
-}
+.modal-close { position: absolute; top: 0.75rem; right: 1rem; background: none; border: none; font-size: 2rem; color: var(--text-color-lighter); cursor: pointer; line-height: 1; padding: 0; transition: color var(--transition-speed); font-family: Arial, sans-serif; }
 .modal-close:hover { color: var(--text-color); }
-body[data-theme="retro"] .modal-close {
-     color: var(--secondary-color);
-     font-family: var(--font-pixel);
-     font-size: 1.5em;
-     top: 10px;
-     right: 10px;
-     text-shadow: 2px 2px 0 var(--primary-color);
-}
-body[data-theme="retro"] .modal-close:hover {
-     color: var(--primary-color);
-     text-shadow: 2px 2px 0 var(--secondary-color);
-}
-
-
-.modal-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.75rem;
-    margin-top: 1.5rem;
-    border-top: 1px solid var(--border-color-light);
-    padding-top: 1rem;
-}
-body[data-theme="retro"] .modal-actions {
-     border-top-width: var(--border-width-thick);
-     border-top-color: var(--border-color);
-}
+body[data-theme="retro"] .modal-close { color: var(--secondary-color); font-family: var(--font-pixel); font-size: 1.5em; top: 10px; right: 10px; text-shadow: 2px 2px 0 var(--primary-color); }
+body[data-theme="retro"] .modal-close:hover { color: var(--primary-color); text-shadow: 2px 2px 0 var(--secondary-color); }
+.modal-actions { display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem; border-top: 1px solid var(--border-color-light); padding-top: 1rem; }
+body[data-theme="retro"] .modal-actions { border-top-width: var(--border-width-thick); border-top-color: var(--border-color); }
 
 
 /* --- Footer --- */
-footer {
-    text-align: center;
-    margin-top: 3rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid var(--border-color-light);
-    color: var(--text-color-light);
-    font-size: 0.9rem;
-}
+footer { text-align: center; margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color-light); color: var(--text-color-light); font-size: 0.9rem; }
+/* --- CHANGE: Use brighter text color for retro footer --- */
 body[data-theme="retro"] footer {
      border-top-width: var(--border-width-thick);
      border-top-color: var(--secondary-color);
-     color: var(--secondary-color);
+     /* color: var(--secondary-color); */ /* Was Magenta */
+     color: var(--text-color-light); /* Use the brighter gray */
      font-size: 0.8em;
 }
-
+/* --- End Change --- */
 footer .heart { color: var(--danger-color); }
 body[data-theme="retro"] footer .heart { animation: heartBeat 1s infinite; }
-
-@keyframes heartBeat {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.3); }
-}
+@keyframes heartBeat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.3); } }
 
 
 /* --- Responsive Adjustments --- */
@@ -802,25 +689,14 @@ body[data-theme="retro"] footer .heart { animation: heartBeat 1s infinite; }
     body[data-theme="retro"] { font-size: 13px; }
     h1.main-title { font-size: 1.9rem; }
     body[data-theme="retro"] h1.main-title { font-size: 1.8em; }
-
     .list-controls { flex-direction: column; align-items: stretch; }
     .filter-controls { justify-content: flex-start; width: 100%; }
     .filter-controls select { max-width: none; }
     .main-actions { width: 100%; justify-content: space-between; }
     .import-export-buttons button, #add-new-button { font-size: 0.9rem; padding: 0.5rem 1rem; }
     body[data-theme="retro"] .import-export-buttons button,
-    body[data-theme="retro"] #add-new-button {
-         font-size: 0.8em;
-    }
-
-    .theme-toggle {
-        position: static; /* Move theme toggle into flow */
-        margin-top: 0.5rem;
-        display: block;
-        width: fit-content;
-        margin-left: auto;
-        margin-right: auto;
-    }
+    body[data-theme="retro"] #add-new-button { font-size: 0.8em; }
+    .theme-toggle { position: static; margin-top: 0.5rem; display: block; width: fit-content; margin-left: auto; margin-right: auto; }
 }
 
 @media (max-width: 600px) {
@@ -829,20 +705,17 @@ body[data-theme="retro"] footer .heart { animation: heartBeat 1s infinite; }
     header, main, footer { padding: 0.5rem; margin: 0.5rem auto; }
     h1.main-title { font-size: 1.7rem; }
     body[data-theme="retro"] h1.main-title { font-size: 1.6em; }
-
     .form-grid { grid-template-columns: 1fr; }
     #countdown-list { grid-template-columns: 1fr; gap: 0.8rem; }
-    .countdown-item { padding: 0.8rem; resize: vertical; /* Only vertical resize on mobile? */ }
-    body[data-theme="retro"] .countdown-item { resize: none; }
-
-    .item-name { font-size: 1.1rem; margin-right: 4.5rem; }
+    .countdown-item { padding: 0.8rem; }
+    .item-header { gap: 0.3rem; } /* Reduce gap slightly on mobile */
+    .item-name { font-size: 1.1rem; /* padding-right: 0; */ /* Flexbox handles spacing */ }
     .item-timer { font-size: 1.7rem; }
     body[data-theme="retro"] .item-timer { font-size: 1.5em;}
-    .item-actions { top: 0.6rem; right: 0.6rem; gap: 0.3rem;}
+    .item-actions { gap: 0.3rem; /* flex position handles placement */ }
     .item-actions button { font-size: 0.9rem; }
     body[data-theme="retro"] .item-actions button { font-size: 1em;}
     .item-actions .delete-button { font-size: 1rem; }
-
     .modal-content { padding: 1.5rem; width: 95%; }
     .modal-close { font-size: 1.8rem; top: 0.5rem; right: 0.7rem; }
     body[data-theme="retro"] .modal-close { font-size: 1.3em;}
