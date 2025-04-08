@@ -15,6 +15,8 @@ export interface CountdownItem {
     design: TimerDesign;      // Visual style identifier
     createdAt: string;        // ISO 8601 string when item was created
     isPast: boolean;          // Flag if the current targetDate has passed
+    customColor?: string; 
+
 }
 
 // Data structure for form values, useful for passing data around
@@ -28,4 +30,6 @@ export interface CountdownFormData {
     note?: string;
     link?: string;
     design: TimerDesign;
+    customColor?: string; 
+
 }

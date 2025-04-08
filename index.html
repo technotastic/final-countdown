@@ -43,6 +43,7 @@
 
         <section id="countdown-list-container">
              <h2>Your Countdowns</h2>
+            <!-- Container for SortableJS -->
             <div id="countdown-list">
                 <!-- Countdown items will be rendered here -->
                 <p class="loading">Loading countdowns...</p>
@@ -64,7 +65,6 @@
                     </div>
                     <div class="form-group">
                         <label for="item-category">Category:</label>
-                        <!-- Added list attribute for datalist -->
                         <input type="text" id="item-category" name="item-category" placeholder="e.g., TV Shows" list="category-suggestions">
                     </div>
                     <div class="form-group">
@@ -73,7 +73,7 @@
                     </div>
                     <div class="form-group">
                         <label for="item-time">Time:</label>
-                        <input type="time" id="item-time" name="item-time" required step="1800"> <!-- step="1800" (30*60) suggests 30min increments to browser UI -->
+                        <input type="time" id="item-time" name="item-time" required step="1800">
                     </div>
 
                     <div class="form-group form-group-checkbox">
@@ -112,11 +112,21 @@
                             <option value="default" selected>Default</option>
                             <option value="compact">Compact</option>
                             <option value="card">Card</option>
-                            <!-- Add 'retro-box' specific to the new theme? -->
                             <option value="retro-box">Retro Box</option>
                         </select>
                     </div>
-                </div>
+
+                    <!-- Color Picker -->
+                    <div class="form-group form-group-color">
+                        <label for="item-custom-color">Custom Color (Optional):</label>
+                        <div class="color-picker-wrapper">
+                             <input type="color" id="item-custom-color" name="item-custom-color" value="#ffffff"> <!-- Default to white -->
+                             <button type="button" id="reset-color-button" class="button button-secondary button-small" title="Reset to default color" disabled>Reset</button>
+                        </div>
+                    </div>
+                    <!-- End Color Picker -->
+
+                </div> <!-- End .form-grid -->
                 <div class="modal-actions">
                      <button type="submit" id="modal-save-button" class="button button-primary">Save</button>
                      <button type="button" id="modal-cancel-button" class="button button-secondary">Cancel</button>
@@ -135,12 +145,12 @@
         <p>Made with TypeScript & <span class="heart">❤️</span></p>
     </footer>
 
-    <!-- ======================= FIX ======================== -->
     <!-- Include SortableJS library **BEFORE** your app script -->
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>    <!-- ==================================================== -->
+    <!-- Make sure this URL is correct and accessible -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js" defer></script>
 
     <!-- Load compiled JavaScript -->
-    <!-- defer is fine here as SortableJS script above it will load first -->
+    <!-- Keep type="module" and defer -->
     <script src="dist/app.js" type="module" defer></script>
 
 </body>

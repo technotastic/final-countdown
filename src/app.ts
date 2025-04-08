@@ -43,87 +43,100 @@ function initializeApp(): void {
 
 function handleSaveItem(formData: CountdownFormData, editingId: string | null): void {
     try {
+        // Log received formData more completely if possible
+        console.log("APP handleSaveItem - Received formData:", JSON.stringify(formData)); // Stringify to see all fields
+
         if (editingId) {
             // --- Update existing item ---
             const itemIndex = countdownItems.findIndex(item => item.id === editingId);
             if (itemIndex === -1) {
                  console.error(`Item with ID ${editingId} not found for update.`);
                  alert("Error: Could not find the item to update.");
-                 return; // Exit if item not found
+                 return;
             }
             const originalItem = countdownItems[itemIndex];
 
-            // Create updated item object
+            // Create updated item object - explicitly map all form fields
             const updatedItem: CountdownItem = {
-                ...originalItem, // Spread original item first
+                // Start with ONLY values that DON'T come from the form
+                id: originalItem.id,
+                createdAt: originalItem.createdAt,
+                originalTargetDate: originalItem.originalTargetDate, // Keep original unless logic changes it
+
+                // Explicitly map ALL fields from formData
                 name: formData.name,
+                targetDate: new Date(formData.targetDateTime).toISOString(),
+                isRecurring: formData.isRecurring,
+                recurrenceInterval: formData.isRecurring ? formData.recurrenceInterval : undefined,
+                recurrenceEndDate: formData.isRecurring && formData.recurrenceEndDate ? new Date(formData.recurrenceEndDate).toISOString() : null,
                 category: formData.category,
                 note: formData.note,
                 link: formData.link,
                 design: formData.design,
-                targetDate: new Date(formData.targetDateTime).toISOString(), // Update target date
-                isRecurring: formData.isRecurring,
-                // Reset recurrence fields if not recurring anymore
-                recurrenceInterval: formData.isRecurring ? formData.recurrenceInterval : undefined,
-                recurrenceEndDate: formData.isRecurring && formData.recurrenceEndDate ? new Date(formData.recurrenceEndDate).toISOString() : null,
-                // Recalculate isPast based on potentially new targetDate
+                customColor: formData.customColor, // *** Explicitly map customColor ***
+                // Calculate isPast based on the potentially new targetDate
                 isPast: new Date(formData.targetDateTime) <= new Date(),
-                // Keep originalTargetDate unless explicitly changed? Or update it? Let's keep it for now.
-                // Keep createdAt date
             };
 
-            // If it's recurring but now marked as past, calculate the next valid occurrence
+             // --- Clear undefined recurrence fields if not recurring ---
+             if (!updatedItem.isRecurring) {
+                 updatedItem.recurrenceInterval = undefined;
+                 updatedItem.recurrenceEndDate = null;
+             }
+
+            // --- Handle recurrence advancement if necessary ---
             if (updatedItem.isPast && updatedItem.isRecurring) {
                 const nextDate = getNextValidOccurrence(updatedItem);
                 if (nextDate) {
                     updatedItem.targetDate = nextDate;
-                    updatedItem.isPast = new Date(updatedItem.targetDate) <= new Date(); // Recheck isPast for the new date
+                    updatedItem.isPast = new Date(updatedItem.targetDate) <= new Date();
                 } else {
-                     // If no next valid date, it stays past (recurrence ended)
                      updatedItem.isPast = true;
                 }
             } else if (!updatedItem.isPast && new Date(updatedItem.targetDate) < new Date()){
-                // Handle case where date was edited to be in the past but wasn't before
-                updatedItem.isPast = true;
+                 updatedItem.isPast = true;
             }
+
+            // --- Log the final updated item before saving ---
+            console.log("APP handleSaveItem - Final updatedItem object:", JSON.stringify(updatedItem)); // Stringify
 
             countdownItems[itemIndex] = updatedItem;
-            console.log("Updated item:", updatedItem.name);
+            console.log("Updated item in array:", countdownItems[itemIndex].name);
 
         } else {
-            // --- Add new item ---
-            const newItem: CountdownItem = {
-                id: generateId(),
-                name: formData.name,
-                targetDate: new Date(formData.targetDateTime).toISOString(),
-                originalTargetDate: new Date(formData.targetDateTime).toISOString(), // Set initial target as original
-                isRecurring: formData.isRecurring,
-                recurrenceInterval: formData.isRecurring ? formData.recurrenceInterval : undefined,
-                recurrenceEndDate: formData.isRecurring && formData.recurrenceEndDate ? new Date(formData.recurrenceEndDate).toISOString() : null,
-                category: formData.category,
-                note: formData.note,
-                link: formData.link,
-                design: formData.design,
-                createdAt: new Date().toISOString(),
-                isPast: new Date(formData.targetDateTime) <= new Date()
-            };
+             // --- Add new item (logic seems okay from logs, but ensure customColor is passed) ---
+             const newItem: CountdownItem = {
+                 id: generateId(),
+                 name: formData.name,
+                 targetDate: new Date(formData.targetDateTime).toISOString(),
+                 originalTargetDate: new Date(formData.targetDateTime).toISOString(),
+                 isRecurring: formData.isRecurring,
+                 recurrenceInterval: formData.isRecurring ? formData.recurrenceInterval : undefined,
+                 recurrenceEndDate: formData.isRecurring && formData.recurrenceEndDate ? new Date(formData.recurrenceEndDate).toISOString() : null,
+                 category: formData.category,
+                 note: formData.note,
+                 link: formData.link,
+                 design: formData.design,
+                 customColor: formData.customColor, // Assign color from formData
+                 createdAt: new Date().toISOString(),
+                 isPast: new Date(formData.targetDateTime) <= new Date()
+             };
 
-             // If new item is created already past but is recurring, find the first future occurrence
-            if (newItem.isPast && newItem.isRecurring) {
-                const nextDate = getNextValidOccurrence(newItem);
-                if (nextDate) {
-                    newItem.targetDate = nextDate;
-                    newItem.isPast = new Date(newItem.targetDate) <= new Date(); // Recheck isPast
-                }
-                // If no next date, it remains past
-            }
-
-            countdownItems.push(newItem);
-            console.log("Added new item:", newItem.name);
+             if (newItem.isPast && newItem.isRecurring) {
+                 const nextDate = getNextValidOccurrence(newItem);
+                 if (nextDate) {
+                     newItem.targetDate = nextDate;
+                     newItem.isPast = new Date(newItem.targetDate) <= new Date();
+                 }
+             }
+             console.log("APP handleSaveItem - New item object:", JSON.stringify(newItem)); // Stringify
+             countdownItems.push(newItem);
+             console.log("Added new item:", newItem.name);
         }
 
         // Save changes and update UI
         saveItems(countdownItems);
+        console.log("APP handleSaveItem - Rendering list after save...");
         renderCountdownList(countdownItems);
 
     } catch (e) {
