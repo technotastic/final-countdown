@@ -1,0 +1,2786 @@
+--- START FILE: index.html ---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Final Countdown</title>
+    <!-- Link to Google Font for Retro Theme -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <!-- Link to your stylesheet -->
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⏱️</text></svg>">
+</head>
+<!-- Body tag will get data-theme attribute -->
+<body>
+
+    <header>
+        <h1 class="main-title">⏱️ The Final Countdown</h1>
+        <p class="subtitle">Track upcoming events, big and small.</p>
+        <!-- Theme Toggle Button -->
+        <button id="theme-toggle-button" class="button theme-toggle" title="Toggle Theme">🎨 Theme</button>
+    </header>
+
+    <main>
+        <section class="list-controls">
+            <div class="main-actions">
+                <button id="add-new-button" class="button button-primary">Add New Countdown</button>
+                 <div class="import-export-buttons">
+                     <button id="export-button" class="button button-secondary">Export Data</button>
+                     <button id="import-button" class="button button-secondary">Import Data</button>
+                     <input type="file" id="import-file" accept=".json" style="display: none;">
+                 </div>
+            </div>
+             <div class="filter-controls">
+                <label for="category-filter">Filter:</label>
+                <select id="category-filter" name="category-filter">
+                    <option value="all">All Categories</option>
+                    <!-- Options added dynamically -->
+                </select>
+            </div>
+        </section>
+
+        <section id="countdown-list-container">
+             <h2>Your Countdowns</h2>
+            <!-- Container for SortableJS -->
+            <div id="countdown-list">
+                <!-- Countdown items will be rendered here -->
+                <p class="loading">Loading countdowns...</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal Structure -->
+    <div id="item-modal" class="modal-overlay">
+        <div class="modal-content">
+            <button id="modal-close-button" class="modal-close">×</button>
+            <h2 id="modal-title">Add New Countdown</h2>
+            <form id="item-form">
+                <input type="hidden" id="item-id" name="item-id">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="item-name">Event Name:</label>
+                        <input type="text" id="item-name" name="item-name" required placeholder="e.g., Next Season Premiere">
+                    </div>
+                    <div class="form-group">
+                        <label for="item-category">Category:</label>
+                        <input type="text" id="item-category" name="item-category" placeholder="e.g., TV Shows" list="category-suggestions">
+                    </div>
+                    <div class="form-group">
+                        <label for="item-date">Date:</label>
+                        <input type="date" id="item-date" name="item-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="item-time">Time:</label>
+                        <input type="time" id="item-time" name="item-time" required step="1800">
+                    </div>
+
+                    <div class="form-group form-group-checkbox">
+                        <label for="item-recurring">
+                            <input type="checkbox" id="item-recurring" name="item-recurring"> Recurring Event?
+                        </label>
+                    </div>
+
+                    <div id="recurring-options" style="display: none;">
+                         <div class="form-group">
+                            <label for="item-recurrence-interval">Repeats:</label>
+                            <select id="item-recurrence-interval" name="item-recurrence-interval">
+                                <option value="daily">Daily</option>
+                                <option value="weekly" selected>Weekly</option>
+                                <option value="monthly">Monthly</option>
+                                <option value="yearly">Yearly</option>
+                            </select>
+                        </div>
+                         <div class="form-group">
+                            <label for="item-recurrence-end-date">Until (Optional):</label>
+                            <input type="date" id="item-recurrence-end-date" name="item-recurrence-end-date">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="item-note">Note (Optional):</label>
+                        <textarea id="item-note" name="item-note" rows="2" placeholder="e.g., Watch party!"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="item-link">Link (Optional):</label>
+                        <input type="url" id="item-link" name="item-link" placeholder="e.g., https://...">
+                    </div>
+                     <div class="form-group">
+                        <label for="item-design">Display Style:</label>
+                        <select id="item-design" name="item-design">
+                            <option value="default" selected>Default</option>
+                            <option value="compact">Compact</option>
+                            <option value="card">Card</option>
+                            <option value="retro-box">Retro Box</option>
+                        </select>
+                    </div>
+
+                    <!-- Color Picker -->
+                    <div class="form-group form-group-color">
+                        <label for="item-custom-color">Custom Color (Optional):</label>
+                        <div class="color-picker-wrapper">
+                             <input type="color" id="item-custom-color" name="item-custom-color" value="#ffffff"> <!-- Default to white -->
+                             <button type="button" id="reset-color-button" class="button button-secondary button-small" title="Reset to default color" disabled>Reset</button>
+                        </div>
+                    </div>
+                    <!-- End Color Picker -->
+
+                </div> <!-- End .form-grid -->
+                <div class="modal-actions">
+                     <button type="submit" id="modal-save-button" class="button button-primary">Save</button>
+                     <button type="button" id="modal-cancel-button" class="button button-secondary">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- End Modal Structure -->
+
+    <!-- Datalist for Category Suggestions -->
+    <datalist id="category-suggestions">
+        <!-- Options populated by JavaScript -->
+    </datalist>
+
+    <footer>
+        <p>Made with TypeScript & <span class="heart">❤️</span></p>
+    </footer>
+
+    <!-- Include SortableJS library **BEFORE** your app script -->
+    <!-- Make sure this URL is correct and accessible -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js" defer></script>
+
+    <!-- Load compiled JavaScript -->
+    <!-- Keep type="module" and defer -->
+    <script src="dist/app.js" type="module" defer></script>
+
+</body>
+</html>
+--- END FILE: index.html ---
+
+--- START FILE: style.css ---
+/* --- Base Variables and Resets --- */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+/* --- DEFAULT THEME --- */
+:root {
+    --font-primary: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --font-secondary: 'Courier New', Courier, monospace;
+    /* For timers */
+    --font-pixel: 'Press Start 2P', cursive;
+    /* For Retro theme */
+
+    --bg-color: #f8f9fa;
+    --text-color: #343a40;
+    --text-color-light: #6c757d;
+    --text-color-lighter: #adb5bd;
+    --link-color: #007bff;
+    --link-hover-color: #0056b3;
+
+    --primary-color: #007bff;
+    /* Blue */
+    --secondary-color: #6c757d;
+    /* Grey */
+    --accent-color: #28a745;
+    /* Green (Used for card style border) */
+    --danger-color: #dc3545;
+    /* Red */
+    --warning-color: #ffc107;
+    /* Yellow */
+
+    --border-color: #dee2e6;
+    --border-color-light: #e9ecef;
+    --border-width: 1px;
+    --border-width-thick: 4px;
+    /* For retro */
+
+    --card-bg: #ffffff;
+    /* Default Theme Card Background */
+    --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    --card-radius: 5px;
+
+    --modal-overlay-bg: rgba(0, 0, 0, 0.6);
+    --modal-bg: #ffffff;
+
+    --button-primary-bg: var(--primary-color);
+    --button-primary-text: #ffffff;
+    --button-primary-hover-bg: #0056b3;
+    --button-secondary-bg: var(--secondary-color);
+    --button-secondary-text: #ffffff;
+    --button-secondary-hover-bg: #5a6268;
+
+    --input-bg: #ffffff;
+    --input-border: var(--border-color);
+    --input-focus-border: var(--primary-color);
+    --input-focus-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+
+    --image-rendering: auto;
+    --pixel-shadow: none;
+    --transition-speed: 0.2s;
+}
+
+/* --- RETRO THEME OVERRIDES --- */
+body[data-theme="retro"] {
+    --bg-color: #000000;
+    --text-color: #FFFFFF;
+    --text-color-light: #cccccc;
+    --text-color-lighter: #aaaaaa;
+    --link-color: #00FFFF;
+    --link-hover-color: #FFFF00;
+
+    --primary-color: #00FFFF;
+    --secondary-color: #FF00FF;
+    --accent-color: #FFFF00;
+    --danger-color: #FF00FF;
+    --warning-color: #FFFF00;
+
+    --border-color: var(--primary-color);
+    --border-color-light: var(--secondary-color);
+    --border-width: var(--border-width-thick);
+
+    --card-bg: rgba(0, 0, 0, 0.5);
+    /* Retro Theme Card Background */
+    --card-shadow: var(--border-width) var(--border-width) 0px var(--secondary-color);
+    --card-radius: 0px;
+
+    --modal-overlay-bg: rgba(0, 0, 0, 0.7);
+    --modal-bg: #111111;
+
+    --button-primary-bg: var(--bg-color);
+    --button-primary-text: var(--primary-color);
+    --button-primary-hover-bg: var(--primary-color);
+    --button-secondary-bg: var(--bg-color);
+    --button-secondary-text: var(--secondary-color);
+    --button-secondary-hover-bg: var(--secondary-color);
+
+    --input-bg: #222222;
+    --input-border: var(--border-color);
+    --input-focus-border: var(--accent-color);
+    --input-focus-shadow: none;
+
+    --image-rendering: pixelated;
+    --pixel-shadow: 3px 3px 0px var(--secondary-color);
+    --transition-speed: none;
+}
+
+/* Add near other form styles */
+.form-group-color {
+    grid-column: 1 / -1;
+    margin-top: 0.5rem;
+}
+
+.color-picker-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+input[type="color"] {
+    width: 50px;
+    height: 35px;
+    padding: 2px;
+    border: var(--border-width) solid var(--input-border);
+    border-radius: var(--card-radius);
+    cursor: pointer;
+    background-color: var(--input-bg);
+}
+
+input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+input[type="color"]::-webkit-color-swatch {
+    border: none;
+    border-radius: calc(var(--card-radius) - 2px);
+}
+
+input[type="color"]::-moz-color-swatch {
+    border: none;
+    border-radius: calc(var(--card-radius) - 2px);
+}
+
+.button-small {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.85rem;
+}
+
+
+/* --- General Styles --- */
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: var(--font-primary);
+    font-size: 16px;
+    line-height: 1.6;
+    padding: 1rem;
+    transition: background-color 0.3s, color 0.3s;
+    image-rendering: var(--image-rendering);
+}
+
+body[data-theme="retro"] {
+    font-family: var(--font-pixel);
+    font-size: 14px;
+    line-height: 1.8;
+}
+
+header,
+main,
+footer {
+    max-width: 1100px;
+    margin: 1rem auto;
+    padding: 1rem;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    position: relative;
+}
+
+h1.main-title {
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+    font-size: 2.2rem;
+}
+
+body[data-theme="retro"] h1.main-title {
+    color: var(--accent-color);
+    font-size: 2em;
+    animation: blink 1.2s step-end infinite;
+}
+
+@keyframes blink {
+    50% {
+        opacity: 0;
+    }
+}
+
+p.subtitle {
+    color: var(--text-color-light);
+    margin-bottom: 1rem;
+}
+
+h2 {
+    margin-bottom: 1rem;
+    color: var(--text-color);
+    border-bottom: var(--border-width) solid var(--border-color);
+    padding-bottom: 0.5rem;
+    font-size: 1.5rem;
+}
+
+body[data-theme="retro"] h2 {
+    color: var(--primary-color);
+    border-bottom-width: var(--border-width-thick);
+    font-size: 1.4em;
+    display: inline-block;
+}
+
+
+section {
+    margin-bottom: 1.5rem;
+}
+
+/* --- Buttons (General) --- */
+button,
+.button {
+    padding: 0.6rem 1.2rem;
+    border: var(--border-width) solid transparent;
+    border-radius: var(--card-radius);
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 500;
+    text-decoration: none;
+    display: inline-block;
+    transition: background-color var(--transition-speed), color var(--transition-speed), border-color var(--transition-speed), box-shadow var(--transition-speed), transform var(--transition-speed);
+    line-height: 1.5;
+    background-color: var(--button-secondary-bg);
+    color: var(--button-secondary-text);
+    border-color: var(--button-secondary-bg);
+    font-family: inherit;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+button:disabled,
+.button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+body[data-theme="retro"] button,
+body[data-theme="retro"] .button {
+    font-family: var(--font-pixel);
+    font-size: 0.9em;
+    box-shadow: var(--pixel-shadow);
+}
+
+body[data-theme="retro"] button:active,
+body[data-theme="retro"] .button:active {
+    box-shadow: none;
+    transform: translate(3px, 3px);
+}
+
+body[data-theme="retro"] button:disabled,
+body[data-theme="retro"] .button:disabled {
+    transform: none;
+    box-shadow: none;
+}
+
+.button-primary {
+    background-color: var(--button-primary-bg);
+    color: var(--button-primary-text);
+    border-color: var(--button-primary-bg);
+}
+
+.button-primary:hover {
+    background-color: var(--button-primary-hover-bg);
+    border-color: var(--button-primary-hover-bg);
+    color: var(--button-primary-text);
+}
+
+body[data-theme="retro"] .button-primary:hover {
+    color: var(--bg-color);
+}
+
+.button-secondary {
+    background-color: var(--button-secondary-bg);
+    color: var(--button-secondary-text);
+    border-color: var(--button-secondary-bg);
+}
+
+.button-secondary:hover {
+    background-color: var(--button-secondary-hover-bg);
+    border-color: var(--button-secondary-hover-bg);
+    color: var(--button-secondary-text);
+}
+
+body[data-theme="retro"] .button-secondary:hover {
+    color: var(--bg-color);
+}
+
+.theme-toggle {
+    position: absolute;
+    top: 0;
+    right: 0;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+    background-color: var(--card-bg);
+    color: var(--text-color-light);
+    border: var(--border-width) solid var(--border-color);
+}
+
+.theme-toggle:hover {
+    color: var(--text-color);
+    border-color: var(--text-color);
+}
+
+body[data-theme="retro"] .theme-toggle {
+    border-color: var(--secondary-color);
+    color: var(--secondary-color);
+    box-shadow: none;
+}
+
+body[data-theme="retro"] .theme-toggle:hover {
+    background-color: var(--secondary-color);
+    color: var(--bg-color);
+    border-color: var(--secondary-color);
+}
+
+.item-actions button {
+    background: none;
+    border: none;
+    padding: 0.2rem 0.4rem;
+    font-size: 1rem;
+    cursor: pointer;
+    color: var(--text-color-light);
+    line-height: 1;
+    box-shadow: none;
+    transition: color var(--transition-speed);
+}
+
+.item-actions button:hover {
+    color: var(--text-color);
+}
+
+.item-actions .delete-button {
+    color: var(--text-color-lighter);
+    font-size: 1.1rem;
+}
+
+.item-actions .delete-button:hover {
+    color: var(--danger-color);
+}
+
+body[data-theme="retro"] .item-actions button {
+    font-size: 1em;
+    transform: none !important;
+}
+
+body[data-theme="retro"] .item-actions button:hover {
+    color: var(--primary-color);
+}
+
+body[data-theme="retro"] .item-actions .delete-button:hover {
+    color: var(--secondary-color);
+}
+
+
+/* --- Forms (Inside Modal) --- */
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group-checkbox {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    align-items: center;
+    margin-top: 0.5rem;
+}
+
+.form-group-checkbox label {
+    margin-bottom: 0;
+    margin-left: 0.5rem;
+    font-weight: normal;
+}
+
+label {
+    margin-bottom: 0.3rem;
+    font-weight: bold;
+    font-size: 0.9rem;
+    color: var(--text-color-light);
+}
+
+body[data-theme="retro"] label {
+    color: var(--primary-color);
+    font-size: 0.8em;
+}
+
+input[type="text"],
+input[type="date"],
+input[type="time"],
+input[type="url"],
+textarea,
+select {
+    width: 100%;
+    padding: 0.6rem 0.8rem;
+    border: var(--border-width) solid var(--input-border);
+    border-radius: var(--card-radius);
+    font-size: 1rem;
+    background-color: var(--input-bg);
+    color: var(--text-color);
+    font-family: inherit;
+    transition: border-color var(--transition-speed), box-shadow var(--transition-speed);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+    outline: none;
+    border-color: var(--input-focus-border);
+    box-shadow: var(--input-focus-shadow);
+}
+
+body[data-theme="retro"] input[type="text"],
+body[data-theme="retro"] input[type="date"],
+body[data-theme="retro"] input[type="time"],
+body[data-theme="retro"] input[type="url"],
+body[data-theme="retro"] textarea,
+body[data-theme="retro"] select {
+    font-family: var(--font-pixel);
+    font-size: 0.9em;
+    border-width: var(--border-width-thick);
+}
+
+body[data-theme="retro"] input[type="date"],
+body[data-theme="retro"] input[type="time"],
+body[data-theme="retro"] select {
+    appearance: none;
+    -webkit-appearance: none;
+    padding-right: 25px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%2300FFFF'%3E%3Cpath d='M8 11L2 5h12L8 11z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.5rem center;
+    background-size: 12px 12px;
+    color-scheme: dark;
+}
+
+input[type="checkbox"] {
+    width: auto;
+    accent-color: var(--primary-color);
+    vertical-align: middle;
+}
+
+body[data-theme="retro"] input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border: var(--border-width-thick) solid var(--primary-color);
+    background-color: var(--bg-color);
+    cursor: pointer;
+    position: relative;
+    top: 2px;
+}
+
+body[data-theme="retro"] input[type="checkbox"]:checked {
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+}
+
+body[data-theme="retro"] input[type="checkbox"]:checked::after {
+    content: 'X';
+    position: absolute;
+    color: var(--bg-color);
+    top: -4px;
+    left: 1px;
+    font-size: 10px;
+}
+
+#recurring-options {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    border-top: 1px dashed var(--border-color);
+    margin-top: 1rem;
+    padding-top: 1rem;
+}
+
+/* --- List Controls (Filter, Import/Export) --- */
+.list-controls {
+    background-color: var(--card-bg);
+    padding: 1rem 1.5rem;
+    border-radius: var(--card-radius);
+    box-shadow: var(--card-shadow);
+    margin-bottom: 1.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+    justify-content: space-between;
+    border: var(--border-width) solid var(--border-color);
+}
+
+body[data-theme="retro"] .list-controls {
+    border-width: var(--border-width-thick);
+}
+
+.main-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.import-export-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.filter-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-grow: 1;
+    min-width: 200px;
+    justify-content: flex-end;
+}
+
+.filter-controls label {
+    margin-bottom: 0;
+}
+
+.filter-controls select {
+    max-width: 250px;
+}
+
+body[data-theme="retro"] .filter-controls label {
+    font-size: 0.9em;
+}
+
+/* --- Countdown List --- */
+#countdown-list-container h2 {
+    margin-left: 0.5rem;
+}
+
+#countdown-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1rem;
+    min-height: 100px;
+}
+
+.no-items,
+.loading {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: var(--text-color-light);
+    padding: 3rem 1rem;
+    background-color: var(--card-bg);
+    border-radius: var(--card-radius);
+    box-shadow: var(--card-shadow);
+    border: var(--border-width) solid var(--border-color);
+}
+
+body[data-theme="retro"] .no-items,
+body[data-theme="retro"] .loading {
+    border-width: var(--border-width-thick);
+    font-size: 0.9em;
+}
+
+
+/* ========================================= */
+/* --- Countdown Item Styling Correction --- */
+/* ========================================= */
+
+.countdown-item {
+    /* Default background color for the default theme */
+    background-color: var(--card-bg);
+
+    /* Other base styles */
+    border: var(--border-width) solid var(--border-color);
+    padding: 1rem 1.2rem;
+    border-radius: var(--card-radius);
+    box-shadow: var(--card-shadow);
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    position: relative;
+    overflow: hidden;
+    cursor: grab;
+    transition: background-color var(--transition-speed) ease;
+    /* Keep transition for default */
+}
+
+/* Specific rule to APPLY the custom color when the class is present */
+/* This rule is more specific than just ".countdown-item" */
+.countdown-item.has-custom-color {
+    background-color: var(--item-custom-bg-color);
+    /* Apply the variable */
+}
+
+/* --- RETRO THEME Specific Overrides for Countdown Item --- */
+body[data-theme="retro"] .countdown-item {
+    /* Default background color for the RETRO theme */
+    background-color: var(--card-bg);
+    /* Uses the retro --card-bg value */
+
+    /* Other retro overrides */
+    transition: none;
+    /* Disable transition */
+    border-width: var(--border-width-thick);
+    border-left: var(--border-width-thick) solid var(--primary-color);
+    resize: none;
+    /* Keep other overrides like cursor, etc. */
+}
+
+/* Ensure the custom color rule also works within the retro theme. */
+/* NOTE: The rule ".countdown-item.has-custom-color" defined above */
+/* is specific enough to override the retro default as well, */
+/* so we don't strictly NEED to repeat it here unless we want */
+/* different behavior for custom colors ONLY in retro theme. */
+/* Keeping it separate makes the intent clearer. */
+body[data-theme="retro"] .countdown-item.has-custom-color {
+    background-color: var(--item-custom-bg-color);
+    /* Apply the variable in retro theme too */
+    /* No transition needed here as base retro rule turns it off */
+}
+
+/* =============================================== */
+/* --- End Countdown Item Styling Correction --- */
+/* =============================================== */
+
+
+/* Define fixed sizes (adjust as needed) */
+.countdown-item.design-default {
+    min-height: 160px;
+}
+
+.countdown-item.design-compact {
+    padding: 0.8rem;
+    gap: 0.4rem;
+    min-height: 120px;
+}
+
+.countdown-item.design-card {
+    border: var(--border-width) solid var(--border-color);
+    border-top: var(--border-width-thick) solid var(--accent-color);
+    text-align: center;
+    min-height: 180px;
+    border-left: var(--border-width) solid var(--border-color);
+}
+
+.countdown-item.design-card.past {
+    border-top-color: var(--danger-color);
+}
+
+.countdown-item.design-retro-box {
+    min-height: 150px;
+    border-color: var(--accent-color);
+    /* Background is handled by base retro + custom rules */
+    box-shadow: var(--border-width) var(--border-width) 0px var(--primary-color);
+}
+
+.countdown-item.design-retro-box .item-name {
+    color: var(--primary-color);
+}
+
+body:not([data-theme="retro"]) .countdown-item.design-retro-box {
+    min-height: 160px;
+    border-left: 5px solid var(--primary-color);
+}
+
+body[data-theme="retro"] .countdown-item.design-card {
+    border-width: var(--border-width-thick);
+    border-top-width: var(--border-width-thick);
+    border-left-width: var(--border-width-thick);
+}
+
+.countdown-item.past {
+    opacity: 0.75;
+}
+
+body[data-theme="retro"] .countdown-item.past {
+    opacity: 0.6;
+    border-color: var(--secondary-color);
+}
+
+.item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-bottom: 0.2rem;
+    min-height: 1.5em;
+}
+
+.item-name {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-color);
+    word-break: break-word;
+    flex-grow: 1;
+}
+
+body[data-theme="retro"] .item-name {
+    color: var(--accent-color);
+    font-size: 1.1em;
+}
+
+.item-actions {
+    display: flex;
+    gap: 0.4rem;
+    flex-shrink: 0;
+}
+
+body[data-theme="retro"] .item-actions {
+    /* No specific positioning needed now */
+}
+
+.item-timer {
+    font-size: 2rem;
+    font-weight: bold;
+    color: var(--primary-color);
+    text-align: center;
+    margin: 0.5rem 0;
+    font-family: var(--font-secondary);
+}
+
+body[data-theme="retro"] .item-timer {
+    font-family: var(--font-pixel);
+    font-size: 1.8em;
+    color: var(--text-color);
+}
+
+.countdown-item.past .item-timer {
+    color: var(--danger-color);
+}
+
+.item-target-date {
+    font-size: 0.85rem;
+    color: var(--text-color-light);
+    text-align: center;
+}
+
+.recurring-info {
+    font-style: italic;
+    margin-left: 0.5em;
+}
+
+body[data-theme="retro"] .item-target-date {
+    font-size: 0.8em;
+}
+
+.item-details {
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--text-color-light);
+    border-top: 1px dashed var(--border-color-light);
+    padding-top: 0.75rem;
+}
+
+body[data-theme="retro"] .item-details {
+    border-top-style: solid;
+    border-top-width: var(--border-width-thick);
+    border-top-color: var(--secondary-color);
+    font-size: 0.8em;
+}
+
+.item-category {
+    font-weight: bold;
+    display: inline-block;
+    background-color: var(--border-color-light);
+    padding: 0.2rem 0.5rem;
+    border-radius: var(--card-radius);
+    font-size: 0.8rem;
+    margin-bottom: 0.5rem;
+    color: var(--text-color-light);
+}
+
+body[data-theme="retro"] .item-category {
+    background-color: var(--primary-color);
+    color: var(--bg-color);
+    font-size: 0.7em;
+    padding: 3px 6px;
+    border: none;
+    box-shadow: 2px 2px 0px var(--secondary-color);
+}
+
+.item-note,
+.item-link {
+    margin-top: 0.4rem;
+    word-wrap: break-word;
+    line-height: 1.4;
+}
+
+.item-note strong,
+.item-link strong {
+    color: var(--text-color);
+}
+
+body[data-theme="retro"] .item-note strong,
+body[data-theme="retro"] .item-link strong {
+    color: var(--primary-color);
+}
+
+.item-link a {
+    color: var(--link-color);
+    text-decoration: none;
+}
+
+.item-link a:hover {
+    color: var(--link-hover-color);
+    text-decoration: underline;
+}
+
+body[data-theme="retro"] .item-link a:hover {
+    text-decoration: none;
+    background-color: var(--accent-color);
+    color: var(--bg-color);
+}
+
+.item-created {
+    font-size: 0.8rem;
+    color: var(--text-color-lighter);
+    margin-top: 0.5rem;
+}
+
+
+/* --- SortableJS Styles --- */
+.sortable-ghost {
+    opacity: 0.4;
+    background-color: #c8ebfb;
+    border: 1px dashed var(--primary-color);
+    border-radius: var(--card-radius);
+}
+
+body[data-theme="retro"] .sortable-ghost {
+    background-color: var(--secondary-color);
+    border: var(--border-width-thick) dashed var(--primary-color);
+    opacity: 0.6;
+}
+
+.sortable-chosen {
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    cursor: grabbing;
+    opacity: 0.9;
+}
+
+body[data-theme="retro"] .sortable-chosen {
+    box-shadow: var(--border-width-thick) var(--border-width-thick) 0px var(--accent-color);
+    opacity: 0.8;
+}
+
+.sortable-drag {
+    /* Optional: styles for the item clone while dragging */
+}
+
+
+/* --- Modal Styles --- */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--modal-overlay-bg);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0s linear 0.3s;
+}
+
+body[data-theme="retro"] .modal-overlay {
+    transition: none;
+}
+
+.modal-overlay.visible {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.3s ease, visibility 0s linear 0s;
+}
+
+body[data-theme="retro"] .modal-overlay.visible {
+    transition: none;
+}
+
+.modal-content {
+    background-color: var(--modal-bg);
+    padding: 2rem;
+    border-radius: var(--card-radius);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    width: 90%;
+    max-width: 650px;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    border: var(--border-width) solid var(--border-color);
+    transform: scale(0.95);
+    transition: transform 0.3s ease;
+}
+
+body[data-theme="retro"] .modal-content {
+    border-width: var(--border-width-thick);
+    transform: none;
+    transition: none;
+    box-shadow: var(--border-width-thick) var(--border-width-thick) 0px var(--accent-color);
+}
+
+.modal-overlay.visible .modal-content {
+    transform: scale(1);
+}
+
+body[data-theme="retro"] .modal-overlay.visible .modal-content {
+    transform: none;
+}
+
+.modal-content h2 {
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+}
+
+.modal-close {
+    position: absolute;
+    top: 0.75rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    font-size: 2rem;
+    color: var(--text-color-lighter);
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+    transition: color var(--transition-speed);
+    font-family: Arial, sans-serif;
+}
+
+.modal-close:hover {
+    color: var(--text-color);
+}
+
+body[data-theme="retro"] .modal-close {
+    color: var(--secondary-color);
+    font-family: var(--font-pixel);
+    font-size: 1.5em;
+    top: 10px;
+    right: 10px;
+    text-shadow: 2px 2px 0 var(--primary-color);
+}
+
+body[data-theme="retro"] .modal-close:hover {
+    color: var(--primary-color);
+    text-shadow: 2px 2px 0 var(--secondary-color);
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+    border-top: 1px solid var(--border-color-light);
+    padding-top: 1rem;
+}
+
+body[data-theme="retro"] .modal-actions {
+    border-top-width: var(--border-width-thick);
+    border-top-color: var(--border-color);
+}
+
+
+/* --- Footer --- */
+footer {
+    text-align: center;
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color-light);
+    color: var(--text-color-light);
+    font-size: 0.9rem;
+}
+
+body[data-theme="retro"] footer {
+    border-top-width: var(--border-width-thick);
+    border-top-color: var(--secondary-color);
+    color: var(--text-color-light);
+    font-size: 0.8em;
+}
+
+footer .heart {
+    color: var(--danger-color);
+}
+
+body[data-theme="retro"] footer .heart {
+    animation: heartBeat 1s infinite;
+}
+
+@keyframes heartBeat {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.3);
+    }
+}
+
+
+/* --- Responsive Adjustments --- */
+@media (max-width: 768px) {
+    body {
+        font-size: 15px;
+    }
+
+    body[data-theme="retro"] {
+        font-size: 13px;
+    }
+
+    h1.main-title {
+        font-size: 1.9rem;
+    }
+
+    body[data-theme="retro"] h1.main-title {
+        font-size: 1.8em;
+    }
+
+    .list-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .filter-controls {
+        justify-content: flex-start;
+        width: 100%;
+    }
+
+    .filter-controls select {
+        max-width: none;
+    }
+
+    .main-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .import-export-buttons button,
+    #add-new-button {
+        font-size: 0.9rem;
+        padding: 0.5rem 1rem;
+    }
+
+    body[data-theme="retro"] .import-export-buttons button,
+    body[data-theme="retro"] #add-new-button {
+        font-size: 0.8em;
+    }
+
+    .theme-toggle {
+        position: static;
+        margin-top: 0.5rem;
+        display: block;
+        width: fit-content;
+        margin-left: auto;
+        margin-right: auto;
+    }
+}
+
+@media (max-width: 600px) {
+    body {
+        padding: 0.5rem;
+        font-size: 14px;
+    }
+
+    body[data-theme="retro"] {
+        font-size: 12px;
+    }
+
+    header,
+    main,
+    footer {
+        padding: 0.5rem;
+        margin: 0.5rem auto;
+    }
+
+    h1.main-title {
+        font-size: 1.7rem;
+    }
+
+    body[data-theme="retro"] h1.main-title {
+        font-size: 1.6em;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    #countdown-list {
+        grid-template-columns: 1fr;
+        gap: 0.8rem;
+    }
+
+    .countdown-item {
+        padding: 0.8rem;
+    }
+
+    .item-header {
+        gap: 0.3rem;
+    }
+
+    .item-name {
+        font-size: 1.1rem;
+    }
+
+    .item-timer {
+        font-size: 1.7rem;
+    }
+
+    body[data-theme="retro"] .item-timer {
+        font-size: 1.5em;
+    }
+
+    .item-actions {
+        gap: 0.3rem;
+    }
+
+    .item-actions button {
+        font-size: 0.9rem;
+    }
+
+    body[data-theme="retro"] .item-actions button {
+        font-size: 1em;
+    }
+
+    .item-actions .delete-button {
+        font-size: 1rem;
+    }
+
+    .modal-content {
+        padding: 1.5rem;
+        width: 95%;
+    }
+
+    .modal-close {
+        font-size: 1.8rem;
+        top: 0.5rem;
+        right: 0.7rem;
+    }
+
+    body[data-theme="retro"] .modal-close {
+        font-size: 1.3em;
+    }
+
+    .modal-actions {
+        flex-direction: column-reverse;
+    }
+
+    .modal-actions button {
+        width: 100%;
+    }
+}
+--- END FILE: style.css ---
+
+--- START FILE: tsconfig.json ---
+{
+  "compilerOptions": {
+    /* Visit https://aka.ms/tsconfig to read more about this file */
+
+    /* Projects */
+    // "incremental": true,                              /* Save .tsbuildinfo files to allow for incremental compilation of projects. */
+    // "composite": true,                                /* Enable constraints that allow a TypeScript project to be used with project references. */
+    // "tsBuildInfoFile": "./.tsbuildinfo",              /* Specify the path to .tsbuildinfo incremental compilation file. */
+    // "disableSourceOfProjectReferenceRedirect": true,  /* Disable preferring source files instead of declaration files when referencing composite projects. */
+    // "disableSolutionSearching": true,                 /* Opt a project out of multi-project reference checking when editing. */
+    // "disableReferencedProjectLoad": true,             /* Reduce the number of projects loaded automatically by TypeScript. */
+
+    /* Language and Environment */
+    "target": "es2016",                                  /* Set the JavaScript language version for emitted JavaScript and include compatible library declarations. */
+    // "lib": [],                                        /* Specify a set of bundled library declaration files that describe the target runtime environment. */
+    // "jsx": "preserve",                                /* Specify what JSX code is generated. */
+    // "libReplacement": true,                           /* Enable lib replacement. */
+    // "experimentalDecorators": true,                   /* Enable experimental support for legacy experimental decorators. */
+    // "emitDecoratorMetadata": true,                    /* Emit design-type metadata for decorated declarations in source files. */
+    // "jsxFactory": "",                                 /* Specify the JSX factory function used when targeting React JSX emit, e.g. 'React.createElement' or 'h'. */
+    // "jsxFragmentFactory": "",                         /* Specify the JSX Fragment reference used for fragments when targeting React JSX emit e.g. 'React.Fragment' or 'Fragment'. */
+    // "jsxImportSource": "",                            /* Specify module specifier used to import the JSX factory functions when using 'jsx: react-jsx*'. */
+    // "reactNamespace": "",                             /* Specify the object invoked for 'createElement'. This only applies when targeting 'react' JSX emit. */
+    // "noLib": true,                                    /* Disable including any library files, including the default lib.d.ts. */
+    // "useDefineForClassFields": true,                  /* Emit ECMAScript-standard-compliant class fields. */
+    // "moduleDetection": "auto",                        /* Control what method is used to detect module-format JS files. */
+
+    /* Modules */
+    "module": "ES6",                                /* Specify what module code is generated. */
+    "rootDir": "./src",                                  /* Specify the root folder within your source files. */
+    // "moduleResolution": "node10",                     /* Specify how TypeScript looks up a file from a given module specifier. */
+    // "baseUrl": "./",                                  /* Specify the base directory to resolve non-relative module names. */
+    // "paths": {},                                      /* Specify a set of entries that re-map imports to additional lookup locations. */
+    // "rootDirs": [],                                   /* Allow multiple folders to be treated as one when resolving modules. *n/
+    // "typeRoots": [],                                  /* Specify multiple folders that act like './node_modules/@types'. */
+    // "types": [],                                      /* Specify type package names to be included without being referenced in a source file. */
+    // "allowUmdGlobalAccess": true,                     /* Allow accessing UMD globals from modules. */
+    // "moduleSuffixes": [],                             /* List of file name suffixes to search when resolving a module. */
+    // "allowImportingTsExtensions": true,               /* Allow imports to include TypeScript file extensions. Requires '--moduleResolution bundler' and either '--noEmit' or '--emitDeclarationOnly' to be set. */
+    // "rewriteRelativeImportExtensions": true,          /* Rewrite '.ts', '.tsx', '.mts', and '.cts' file extensions in relative import paths to their JavaScript equivalent in output files. */
+    // "resolvePackageJsonExports": true,                /* Use the package.json 'exports' field when resolving package imports. */
+    // "resolvePackageJsonImports": true,                /* Use the package.json 'imports' field when resolving imports. */
+    // "customConditions": [],                           /* Conditions to set in addition to the resolver-specific defaults when resolving imports. */
+    // "noUncheckedSideEffectImports": true,             /* Check side effect imports. */
+    // "resolveJsonModule": true,                        /* Enable importing .json files. */
+    // "allowArbitraryExtensions": true,                 /* Enable importing files with any extension, provided a declaration file is present. */
+    // "noResolve": true,                                /* Disallow 'import's, 'require's or '<reference>'s from expanding the number of files TypeScript should add to a project. */
+
+    /* JavaScript Support */
+    // "allowJs": true,                                  /* Allow JavaScript files to be a part of your program. Use the 'checkJS' option to get errors from these files. */
+    // "checkJs": true,                                  /* Enable error reporting in type-checked JavaScript files. */
+    // "maxNodeModuleJsDepth": 1,                        /* Specify the maximum folder depth used for checking JavaScript files from 'node_modules'. Only applicable with 'allowJs'. */
+
+    /* Emit */
+    // "declaration": true,                              /* Generate .d.ts files from TypeScript and JavaScript files in your project. */
+    // "declarationMap": true,                           /* Create sourcemaps for d.ts files. */
+    // "emitDeclarationOnly": true,                      /* Only output d.ts files and not JavaScript files. */
+    // "sourceMap": true,                                /* Create source map files for emitted JavaScript files. */
+    // "inlineSourceMap": true,                          /* Include sourcemap files inside the emitted JavaScript. */
+    // "noEmit": true,                                   /* Disable emitting files from a compilation. */
+    // "outFile": "./",                                  /* Specify a file that bundles all outputs into one JavaScript file. If 'declaration' is true, also designates a file that bundles all .d.ts output. */
+    "outDir": "./dist",                                   /* Specify an output folder for all emitted files. */
+    // "removeComments": true,                           /* Disable emitting comments. */
+    // "importHelpers": true,                            /* Allow importing helper functions from tslib once per project, instead of including them per-file. */
+    // "downlevelIteration": true,                       /* Emit more compliant, but verbose and less performant JavaScript for iteration. */
+    // "sourceRoot": "",                                 /* Specify the root path for debuggers to find the reference source code. */
+    // "mapRoot": "",                                    /* Specify the location where debugger should locate map files instead of generated locations. */
+    // "inlineSources": true,                            /* Include source code in the sourcemaps inside the emitted JavaScript. */
+    // "emitBOM": true,                                  /* Emit a UTF-8 Byte Order Mark (BOM) in the beginning of output files. */
+    // "newLine": "crlf",                                /* Set the newline character for emitting files. */
+    // "stripInternal": true,                            /* Disable emitting declarations that have '@internal' in their JSDoc comments. */
+    // "noEmitHelpers": true,                            /* Disable generating custom helper functions like '__extends' in compiled output. */
+    // "noEmitOnError": true,                            /* Disable emitting files if any type checking errors are reported. */
+    // "preserveConstEnums": true,                       /* Disable erasing 'const enum' declarations in generated code. */
+    // "declarationDir": "./",                           /* Specify the output directory for generated declaration files. */
+
+    /* Interop Constraints */
+    // "isolatedModules": true,                          /* Ensure that each file can be safely transpiled without relying on other imports. */
+    // "verbatimModuleSyntax": true,                     /* Do not transform or elide any imports or exports not marked as type-only, ensuring they are written in the output file's format based on the 'module' setting. */
+    // "isolatedDeclarations": true,                     /* Require sufficient annotation on exports so other tools can trivially generate declaration files. */
+    // "erasableSyntaxOnly": true,                       /* Do not allow runtime constructs that are not part of ECMAScript. */
+    // "allowSyntheticDefaultImports": true,             /* Allow 'import x from y' when a module doesn't have a default export. */
+    "esModuleInterop": true,                             /* Emit additional JavaScript to ease support for importing CommonJS modules. This enables 'allowSyntheticDefaultImports' for type compatibility. */
+    // "preserveSymlinks": true,                         /* Disable resolving symlinks to their realpath. This correlates to the same flag in node. */
+    "forceConsistentCasingInFileNames": true,            /* Ensure that casing is correct in imports. */
+
+    /* Type Checking */
+    "strict": true,                                      /* Enable all strict type-checking options. */
+    // "noImplicitAny": true,                            /* Enable error reporting for expressions and declarations with an implied 'any' type. */
+    // "strictNullChecks": true,                         /* When type checking, take into account 'null' and 'undefined'. */
+    // "strictFunctionTypes": true,                      /* When assigning functions, check to ensure parameters and the return values are subtype-compatible. */
+    // "strictBindCallApply": true,                      /* Check that the arguments for 'bind', 'call', and 'apply' methods match the original function. */
+    // "strictPropertyInitialization": true,             /* Check for class properties that are declared but not set in the constructor. */
+    // "strictBuiltinIteratorReturn": true,              /* Built-in iterators are instantiated with a 'TReturn' type of 'undefined' instead of 'any'. */
+    // "noImplicitThis": true,                           /* Enable error reporting when 'this' is given the type 'any'. */
+    // "useUnknownInCatchVariables": true,               /* Default catch clause variables as 'unknown' instead of 'any'. */
+    // "alwaysStrict": true,                             /* Ensure 'use strict' is always emitted. */
+    // "noUnusedLocals": true,                           /* Enable error reporting when local variables aren't read. */
+    // "noUnusedParameters": true,                       /* Raise an error when a function parameter isn't read. */
+    // "exactOptionalPropertyTypes": true,               /* Interpret optional property types as written, rather than adding 'undefined'. */
+    // "noImplicitReturns": true,                        /* Enable error reporting for codepaths that do not explicitly return in a function. */
+    // "noFallthroughCasesInSwitch": true,               /* Enable error reporting for fallthrough cases in switch statements. */
+    // "noUncheckedIndexedAccess": true,                 /* Add 'undefined' to a type when accessed using an index. */
+    // "noImplicitOverride": true,                       /* Ensure overriding members in derived classes are marked with an override modifier. */
+    // "noPropertyAccessFromIndexSignature": true,       /* Enforces using indexed accessors for keys declared using an indexed type. */
+    // "allowUnusedLabels": true,                        /* Disable error reporting for unused labels. */
+    // "allowUnreachableCode": true,                     /* Disable error reporting for unreachable code. */
+
+    /* Completeness */
+    // "skipDefaultLibCheck": true,                      /* Skip type checking .d.ts files that are included with TypeScript. */
+    "skipLibCheck": true                                 /* Skip type checking all .d.ts files. */
+  },
+  "include": ["src/**/*"]
+
+}
+--- END FILE: tsconfig.json ---
+
+--- START FILE: src/ui.ts ---
+import { CountdownItem, TimerDesign, RecurrenceInterval, CountdownFormData } from './models.js';
+import { formatTimeRemaining, formatDisplayDate, formatDateTimeForInput } from './utils.js';
+
+// Make Sortable globally available (if using CDN)
+declare const Sortable: any;
+
+// --- State ---
+let categoryFilter: string = 'all';
+let categories: Set<string> = new Set();
+let currentModalMode: 'add' | 'edit' = 'add';
+let currentEditingItemId: string | null = null;
+const NO_CUSTOM_COLOR_VALUE = '#ffffff'; // Represents "no custom color"
+
+// --- DOM Element Selectors ---
+const bodyElement = document.body;
+export const listContainer = document.getElementById('countdown-list') as HTMLDivElement; // Export for app.ts if needed
+const categoryFilterSelect = document.getElementById('category-filter') as HTMLSelectElement;
+const exportButton = document.getElementById('export-button') as HTMLButtonElement;
+const importButton = document.getElementById('import-button') as HTMLButtonElement;
+const importInput = document.getElementById('import-file') as HTMLInputElement;
+const addNewButton = document.getElementById('add-new-button') as HTMLButtonElement;
+const themeToggleButton = document.getElementById('theme-toggle-button') as HTMLButtonElement;
+
+// Modal Elements
+const modalOverlay = document.getElementById('item-modal') as HTMLDivElement;
+const modalContent = modalOverlay?.querySelector('.modal-content') as HTMLDivElement;
+const modalCloseButton = document.getElementById('modal-close-button') as HTMLButtonElement;
+const modalCancelButton = document.getElementById('modal-cancel-button') as HTMLButtonElement;
+const modalSaveButton = document.getElementById('modal-save-button') as HTMLButtonElement;
+const modalTitle = document.getElementById('modal-title') as HTMLHeadingElement;
+const itemForm = document.getElementById('item-form') as HTMLFormElement;
+const categoryDatalist = document.getElementById('category-suggestions') as HTMLDataListElement;
+
+// Form Elements Reference
+const formElements = itemForm ? {
+    id: itemForm.elements.namedItem('item-id') as HTMLInputElement,
+    name: itemForm.elements.namedItem('item-name') as HTMLInputElement,
+    date: itemForm.elements.namedItem('item-date') as HTMLInputElement,
+    time: itemForm.elements.namedItem('item-time') as HTMLInputElement,
+    isRecurring: itemForm.elements.namedItem('item-recurring') as HTMLInputElement,
+    recurrenceInterval: itemForm.elements.namedItem('item-recurrence-interval') as HTMLSelectElement,
+    recurrenceEndDate: itemForm.elements.namedItem('item-recurrence-end-date') as HTMLInputElement,
+    category: itemForm.elements.namedItem('item-category') as HTMLInputElement,
+    note: itemForm.elements.namedItem('item-note') as HTMLTextAreaElement,
+    link: itemForm.elements.namedItem('item-link') as HTMLInputElement,
+    design: itemForm.elements.namedItem('item-design') as HTMLSelectElement,
+    recurringOptions: document.getElementById('recurring-options') as HTMLDivElement,
+    customColor: itemForm.elements.namedItem('item-custom-color') as HTMLInputElement,
+    resetColorButton: document.getElementById('reset-color-button') as HTMLButtonElement,
+} : null;
+
+
+// --- Event Handler Setup ---
+type SaveItemCallback = (formData: CountdownFormData, itemId: string | null) => void;
+type DeleteItemCallback = (id: string) => void;
+type EditRequestCallback = (id: string) => void;
+type CopyRequestCallback = (id: string) => void;
+type FilterUpdateCallback = (filter: string) => void;
+type ExportCallback = () => void;
+type ImportCallback = (file: File) => void;
+type ThemeChangeCallback = (themeName: string) => void;
+type OrderUpdateCallback = (itemId: string, oldIndex: number, newIndex: number) => void;
+
+
+export function setupUIEventListeners(callbacks: {
+    saveItem: SaveItemCallback;
+    deleteItem: DeleteItemCallback;
+    requestEditItem: EditRequestCallback;
+    requestCopyItem: CopyRequestCallback;
+    updateFilter: FilterUpdateCallback;
+    exportItems: ExportCallback;
+    importItems: ImportCallback;
+    themeChanged: ThemeChangeCallback;
+    orderChanged: OrderUpdateCallback;
+}): void {
+
+    console.log('setupUIEventListeners called.');
+
+    // Essential element check
+    if (!listContainer || !categoryFilterSelect || !exportButton || !importButton || !importInput || !addNewButton || !modalOverlay || !modalCloseButton || !modalCancelButton || !itemForm || !formElements || !themeToggleButton || !categoryDatalist) {
+        console.error("CRITICAL ERROR: One or more essential UI elements could not be found. Aborting event listener setup.");
+        alert("Initialization Error: UI components missing. Cannot setup interactions.");
+        return;
+    }
+
+    // --- Initialize SortableJS ---
+    if (typeof Sortable !== 'undefined') {
+        try {
+            new Sortable(listContainer, {
+                animation: 150,
+                ghostClass: 'sortable-ghost',
+                chosenClass: 'sortable-chosen',
+                dragClass: 'sortable-drag',
+                filter: '.item-actions, .item-actions button, a, input, select, textarea', // Prevent drag on interactive elements
+                preventOnFilter: true,
+                onEnd: (evt: any) => {
+                    if (evt.oldIndex !== undefined && evt.newIndex !== undefined && evt.oldIndex !== evt.newIndex) {
+                        const itemId = evt.item.getAttribute('data-id');
+                        if (itemId) {
+                            console.log(`UI: Item ${itemId} moved from visual index ${evt.oldIndex} to ${evt.newIndex}`);
+                            callbacks.orderChanged(itemId, evt.oldIndex, evt.newIndex);
+                        } else {
+                            console.error("UI ERROR: Dragged item missing data-id attribute.");
+                        }
+                    }
+                },
+            });
+            console.log("SortableJS successfully initialized on element:", listContainer);
+        } catch (error) {
+            console.error("Error initializing SortableJS:", error);
+            alert("Could not enable drag-and-drop functionality.");
+        }
+    } else {
+        console.warn("SortableJS library not found. Drag-and-drop reordering disabled.");
+    }
+
+
+    // --- Theme Toggle ---
+    themeToggleButton.addEventListener('click', () => {
+        const currentTheme = bodyElement.getAttribute('data-theme');
+        const newTheme = currentTheme === 'retro' ? 'default' : 'retro';
+        applyTheme(newTheme);
+        callbacks.themeChanged(newTheme);
+    });
+
+    // --- Modal Triggers ---
+    addNewButton.addEventListener('click', () => openModal('add'));
+    modalCloseButton.addEventListener('click', closeModal);
+    modalCancelButton.addEventListener('click', closeModal);
+    modalOverlay.addEventListener('click', (event) => {
+        if (event.target === modalOverlay) closeModal();
+    });
+
+    // --- Form Submission ---
+    itemForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        if (!formElements) { console.error("Form elements not available for submission."); return; }
+
+        // ... (date/time validation) ...
+
+        // --- DEBUG COLOR VALUES HERE ---
+        const selectedColorValue = formElements.customColor.value;
+        const isDefaultColor = selectedColorValue.toLowerCase() === NO_CUSTOM_COLOR_VALUE.toLowerCase();
+        const calculatedColorToSave = isDefaultColor ? undefined : selectedColorValue;
+
+        console.log("UI Submit - Raw Color Input Value:", selectedColorValue);
+        console.log("UI Submit - Is Default Color (#ffffff)?", isDefaultColor);
+        console.log("UI Submit - Calculated Color to Save:", calculatedColorToSave);
+        // --- END DEBUG ---
+
+        // Assemble form data DTO
+        const formData: CountdownFormData = {
+            name: formElements.name.value.trim() || 'Unnamed Event',
+            targetDateTime: `${formElements.date.value}T${formElements.time.value || '00:00'}`,
+            isRecurring: formElements.isRecurring.checked,
+            recurrenceInterval: formElements.isRecurring.checked ? formElements.recurrenceInterval.value as RecurrenceInterval : undefined,
+            recurrenceEndDate: formElements.isRecurring.checked && formElements.recurrenceEndDate.value ? formElements.recurrenceEndDate.value : null,
+            category: formElements.category.value.trim() || 'Uncategorized',
+            note: formElements.note.value.trim(),
+            link: formElements.link.value.trim(),
+            design: formElements.design.value as TimerDesign,
+            customColor: calculatedColorToSave, // Use the calculated value
+        };
+
+        // --- Log the final formData object being sent ---
+        console.log("UI Submit - Final formData being sent:", JSON.stringify(formData));
+
+        callbacks.saveItem(formData, currentEditingItemId);
+        closeModal();
+    });
+
+    // --- Form Element Interactions ---
+    formElements.isRecurring.addEventListener('change', () => {
+        if (!formElements) return;
+        formElements.recurringOptions.style.display = formElements.isRecurring.checked ? 'grid' : 'none';
+    });
+
+    // Color Picker Interactions
+    formElements.customColor.addEventListener('input', () => {
+        if (formElements) formElements.resetColorButton.disabled = false; // Enable reset when user interacts
+    });
+    formElements.resetColorButton.addEventListener('click', () => {
+        if (formElements) {
+            formElements.customColor.value = NO_CUSTOM_COLOR_VALUE;
+            formElements.resetColorButton.disabled = true;
+        }
+    });
+
+    // --- List Item Actions (Edit/Copy/Delete) ---
+    listContainer.addEventListener('click', (event) => {
+        const target = event.target as HTMLElement;
+        const actionButton = target.closest('.item-actions button'); // Target only buttons within actions
+        if (!actionButton) return;
+
+        const itemElement = actionButton.closest('.countdown-item');
+        const itemId = itemElement?.getAttribute('data-id');
+        if (!itemId) return;
+
+        if (actionButton.classList.contains('edit-button')) callbacks.requestEditItem(itemId);
+        else if (actionButton.classList.contains('copy-button')) callbacks.requestCopyItem(itemId);
+        else if (actionButton.classList.contains('delete-button')) callbacks.deleteItem(itemId);
+    });
+
+    // --- Other Controls (Filter, Import/Export) ---
+    categoryFilterSelect.addEventListener('change', () => {
+        categoryFilter = categoryFilterSelect.value; // Update internal filter state
+        callbacks.updateFilter(categoryFilter); // Notify app logic (which triggers re-render)
+    });
+    exportButton.addEventListener('click', callbacks.exportItems);
+    importButton.addEventListener('click', () => importInput.click());
+    importInput.addEventListener('change', () => {
+        const file = importInput.files?.[0];
+        if (file) {
+            callbacks.importItems(file);
+            importInput.value = ''; // Reset file input after selection
+        }
+    });
+}
+
+// --- Theme Management ---
+export function applyTheme(themeName: string): void {
+    console.log('Applying theme via applyTheme():', themeName);
+    if (themeName === 'retro') {
+        bodyElement.setAttribute('data-theme', 'retro');
+    } else {
+        bodyElement.removeAttribute('data-theme'); // Default theme has no attribute
+    }
+    console.log('Body data-theme attribute is now:', bodyElement.getAttribute('data-theme'));
+}
+
+// --- Modal Management ---
+export function openModal(mode: 'add' | 'edit', itemId?: string, prefillData?: Partial<CountdownItem>): void {
+    if (!modalOverlay || !itemForm || !formElements) {
+        console.error("Cannot open modal: Required elements missing.");
+        return;
+    }
+
+    currentModalMode = mode;
+    currentEditingItemId = (mode === 'edit' && itemId) ? itemId : null;
+    resetForm(); // Reset form fields before populating
+
+    if (mode === 'edit') {
+        modalTitle.textContent = 'Edit Countdown';
+        modalSaveButton.textContent = 'Update';
+        if (prefillData) {
+            populateForm(prefillData);
+            formElements.id.value = itemId || ''; // Set hidden ID
+        } else {
+            console.error("Edit mode opened without prefill data for ID:", itemId);
+            alert("Error: Could not load item data for editing.");
+            closeModal(); return;
+        }
+    } else { // mode === 'add'
+        modalTitle.textContent = 'Add Countdown';
+        modalSaveButton.textContent = 'Add';
+        if (prefillData) { // Copying existing item
+            populateForm({ ...prefillData, name: `${prefillData.name || ''} (Copy)` });
+            formElements.id.value = ''; // Clear ID for copy
+            currentEditingItemId = null;
+        } else { // Adding a brand new item
+            setDefaultDateTime(); // Set default date/time
+            formElements.id.value = ''; // Ensure ID is clear
+            formElements.customColor.value = NO_CUSTOM_COLOR_VALUE; // Set default color
+            formElements.resetColorButton.disabled = true; // Disable reset for new
+        }
+    }
+
+    updateCategoryDatalist(categories); // Refresh suggestions
+    modalOverlay.classList.add('visible');
+    formElements.name.focus(); // Focus name field
+}
+
+function setDefaultDateTime(): void {
+    if (!formElements) return;
+    const now = new Date();
+    let targetTime = new Date(now);
+    // Logic to set default time (e.g., next half hour)
+    const currentMinutes = targetTime.getMinutes();
+    if (currentMinutes === 0 || currentMinutes === 30) targetTime.setMinutes(currentMinutes + 30);
+    else if (currentMinutes < 30) targetTime.setMinutes(30, 0, 0);
+    else { targetTime.setMinutes(0, 0, 0); targetTime.setHours(targetTime.getHours() + 1); }
+    // Format for input fields
+    const year = targetTime.getFullYear();
+    const month = (targetTime.getMonth() + 1).toString().padStart(2, '0');
+    const day = targetTime.getDate().toString().padStart(2, '0');
+    const hours = targetTime.getHours().toString().padStart(2, '0');
+    const minutes = targetTime.getMinutes().toString().padStart(2, '0');
+    formElements.date.value = `${year}-${month}-${day}`;
+    formElements.time.value = `${hours}:${minutes}`;
+}
+
+export function closeModal(): void {
+    if (!modalOverlay) return;
+    modalOverlay.classList.remove('visible');
+    resetForm(); // Ensure form is clean for next opening
+    currentEditingItemId = null;
+    currentModalMode = 'add';
+}
+
+function resetForm(): void {
+    if (!itemForm || !formElements) return;
+    itemForm.reset();
+    formElements.recurringOptions.style.display = 'none';
+    formElements.id.value = '';
+    formElements.design.value = 'default';
+    formElements.recurrenceInterval.value = 'weekly';
+    // Reset color picker
+    formElements.customColor.value = NO_CUSTOM_COLOR_VALUE;
+    formElements.resetColorButton.disabled = true;
+}
+
+function populateForm(itemData: Partial<CountdownItem>): void {
+    if (!formElements) return;
+    // Populate standard fields
+    formElements.name.value = itemData.name || '';
+    formElements.category.value = itemData.category || 'Uncategorized';
+    formElements.note.value = itemData.note || '';
+    formElements.link.value = itemData.link || '';
+    formElements.design.value = itemData.design || 'default';
+
+    // Populate date/time
+    if (itemData.targetDate) {
+        try {
+            const { date, time } = formatDateTimeForInput(itemData.targetDate);
+            formElements.date.value = date;
+            formElements.time.value = time;
+        } catch (e) { formElements.date.value = ''; formElements.time.value = ''; }
+    } else { formElements.date.value = ''; formElements.time.value = ''; }
+
+    // Populate recurring fields
+    formElements.isRecurring.checked = !!itemData.isRecurring;
+    if (itemData.isRecurring) {
+        formElements.recurringOptions.style.display = 'grid';
+        formElements.recurrenceInterval.value = itemData.recurrenceInterval || 'weekly';
+        formElements.recurrenceEndDate.value = itemData.recurrenceEndDate ? itemData.recurrenceEndDate.split('T')[0] : '';
+    } else {
+        formElements.recurringOptions.style.display = 'none';
+    }
+
+    // Populate color picker
+    formElements.customColor.value = itemData.customColor || NO_CUSTOM_COLOR_VALUE;
+    formElements.resetColorButton.disabled = !itemData.customColor; // Enable reset only if a custom color exists
+}
+
+
+// --- Rendering ---
+export function renderCountdownList(items: CountdownItem[]): void {
+    if (!listContainer) return;
+
+    const scrollY = window.scrollY;
+    listContainer.innerHTML = ''; // Clear previous items
+    const localCategories = new Set<string>();
+    localCategories.add('all');
+    const now = Date.now();
+
+    // Update global categories set from ALL items
+    items.forEach(item => {
+        const categoryName = (item.category || 'Uncategorized').trim();
+        if (categoryName) localCategories.add(categoryName);
+    });
+    categories = localCategories;
+
+    // Apply category filter (using the state variable `categoryFilter`)
+    const filteredItems = items.filter(item =>
+        categoryFilter === 'all' || (item.category || 'Uncategorized') === categoryFilter
+    );
+
+    // Sort filtered items for rendering consistency (date/status based)
+    filteredItems.sort((a, b) => {
+        const aIsPassed = new Date(a.targetDate).getTime() <= now;
+        const bIsPassed = new Date(b.targetDate).getTime() <= now;
+        if (!aIsPassed && !bIsPassed) return new Date(a.targetDate).getTime() - new Date(b.targetDate).getTime();
+        else if (aIsPassed && bIsPassed) return new Date(b.targetDate).getTime() - new Date(a.targetDate).getTime();
+        else if (!aIsPassed && bIsPassed) return -1;
+        else return 1;
+    });
+
+    // Render items or 'no items' message
+    if (filteredItems.length === 0) {
+        listContainer.innerHTML = `<p class="no-items">No countdowns found${categoryFilter !== 'all' ? ` in category "${escapeHtml(categoryFilter)}"` : ''}. Add one!</p>`;
+    } else {
+        filteredItems.forEach(item => {
+            try {
+                const itemElement = createCountdownElement(item);
+                listContainer.appendChild(itemElement);
+            } catch (e) { console.error(`Error creating element for item ${item.id}:`, e); }
+        });
+    }
+
+    updateCategoryFilterOptions(); // Update dropdown options
+    window.scrollTo({ top: scrollY, behavior: 'instant' }); // Restore scroll
+}
+
+function createCountdownElement(item: CountdownItem): HTMLElement {
+    const element = document.createElement('div');
+    element.classList.add('countdown-item', `design-${item.design || 'default'}`);
+    if (item.id) element.setAttribute('data-id', item.id);
+    else console.warn("Item missing ID during element creation:", item);
+
+    // --- Log color received by this function ---
+    console.log(`UI Create Element (${item.id || 'NO ID'}) - Received item.customColor:`, item.customColor);
+
+    // Handle invalid date
+    const targetDate = new Date(item.targetDate);
+     if (isNaN(targetDate.getTime())) {
+         element.innerHTML = `<div class="item-header"><span class="item-name text-danger">INVALID ITEM DATA</span></div><p>Error: Invalid target date.</p>`;
+         element.classList.add('invalid-item', 'border-danger');
+         return element;
+     }
+
+    // Handle past state
+    const timeRemainingMs = targetDate.getTime() - Date.now();
+    const isCurrentlyPast = item.isPast !== undefined ? item.isPast : (timeRemainingMs <= 0);
+    if (isCurrentlyPast) element.classList.add('past');
+
+    // Apply custom color if present
+    if (item.customColor && typeof item.customColor === 'string' && item.customColor.startsWith('#')) { // Add extra check for validity
+        // --- Log setting the color ---
+        console.log(`UI Create Element (${item.id || 'NO ID'}) - SETTING CSS variable to:`, item.customColor);
+        element.style.setProperty('--item-custom-bg-color', item.customColor);
+        element.classList.add('has-custom-color');
+    } else {
+        // --- Log removing the color ---
+        console.log(`UI Create Element (${item.id || 'NO ID'}) - REMOVING CSS variable (Color was: ${item.customColor})`);
+        element.style.removeProperty('--item-custom-bg-color'); // Ensure removal if not set or invalid
+        element.classList.remove('has-custom-color');
+    }
+
+    // Sanitize content
+    const safeName = escapeHtml(item.name || 'Unnamed Event');
+    const safeCategory = escapeHtml(item.category || 'Uncategorized');
+    const safeNote = escapeHtml(item.note || '');
+    const safeLink = item.link ? escapeHtml(item.link) : '';
+    const linkHref = ensureHttp(item.link || '#');
+
+    // Action buttons HTML
+    const editButtonHtml = `<button class="edit-button" title="Edit Item">✏️</button>`;
+    const copyButtonHtml = `<button class="copy-button" title="Copy Item">📋</button>`;
+    const deleteButtonHtml = `<button class="delete-button" title="Delete Item">🗑️</button>`;
+
+    // Assemble inner HTML
+    element.innerHTML = `
+        <div class="item-header">
+            <span class="item-name">${safeName}</span>
+            <div class="item-actions">
+                 ${editButtonHtml} ${copyButtonHtml} ${deleteButtonHtml}
+            </div>
+        </div>
+        <div class="item-timer" data-target-date="${item.targetDate}">
+            ${isCurrentlyPast ? 'Now!' : formatTimeRemaining(timeRemainingMs)}
+        </div>
+        <div class="item-target-date">
+            Target: ${formatDisplayDate(item.targetDate)}
+            ${item.isRecurring ? `<span class="recurring-info">(Repeats ${item.recurrenceInterval}${item.recurrenceEndDate ? ` until ${formatDisplayDate(item.recurrenceEndDate).split(',')[0]}` : ''})</span>` : ''}
+        </div>
+        <div class="item-details">
+            <span class="item-category">${safeCategory}</span>
+            ${safeNote ? `<p class="item-note"><strong>Note:</strong> ${safeNote.replace(/\n/g, '<br>')}</p>` : ''}
+            ${safeLink ? `<p class="item-link"><strong>Link:</strong> <a href="${linkHref}" target="_blank" rel="noopener noreferrer">${safeLink}</a></p>` : ''}
+            <p class="item-created"><em>Added: ${formatDisplayDate(item.createdAt)}</em></p>
+        </div>
+    `;
+
+    return element;
+}
+
+
+// --- Timer Update ---
+export function updateTimers(items: CountdownItem[]): void {
+    if (!listContainer) return;
+    const itemElements = listContainer.querySelectorAll('.countdown-item:not(.past):not(.invalid-item)');
+    const now = Date.now();
+
+    itemElements.forEach(element => {
+        const timerElement = element.querySelector('.item-timer') as HTMLElement;
+        const targetDateStr = timerElement?.getAttribute('data-target-date');
+        if (!timerElement || !targetDateStr) return;
+
+        try {
+            const targetDate = new Date(targetDateStr);
+            if (isNaN(targetDate.getTime())) { timerElement.textContent = "Error"; return; };
+            const timeRemainingMs = targetDate.getTime() - now;
+            timerElement.textContent = (timeRemainingMs > 0) ? formatTimeRemaining(timeRemainingMs) : "Now!";
+            // Note: This function only updates display; actual past state change is handled by checkPastEvents in app.ts
+        } catch (e) {
+            console.error("Error updating timer display:", e);
+            timerElement.textContent = "Error";
+        }
+    });
+}
+
+// --- Category Filtering ---
+function updateCategoryFilterOptions(): void {
+    if (!categoryFilterSelect) return;
+    const currentSelection = categoryFilterSelect.value;
+    while (categoryFilterSelect.options.length > 1) categoryFilterSelect.remove(1);
+    const sortedCategories = Array.from(categories)
+        .filter(cat => cat && cat !== 'all')
+        .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+    sortedCategories.forEach(category => {
+        const option = document.createElement('option');
+        option.value = category; option.textContent = category;
+        categoryFilterSelect.appendChild(option);
+    });
+    if (Array.from(categoryFilterSelect.options).some(opt => opt.value === currentSelection)) {
+        categoryFilterSelect.value = currentSelection;
+    } else {
+        categoryFilterSelect.value = 'all';
+        if (categoryFilter !== 'all') categoryFilter = 'all'; // Sync state if selection removed
+    }
+}
+
+function updateCategoryDatalist(allCategories: Set<string>): void {
+    if (!categoryDatalist) return;
+    categoryDatalist.innerHTML = '';
+    const sortedCategories = Array.from(allCategories)
+        .filter(cat => cat && cat !== 'all' && cat !== 'Uncategorized')
+        .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+    sortedCategories.forEach(category => {
+        const option = document.createElement('option');
+        option.value = category;
+        categoryDatalist.appendChild(option);
+    });
+}
+
+// --- Helper Functions ---
+function escapeHtml(unsafe: string | null | undefined): string {
+    if (unsafe === null || unsafe === undefined) return "";
+    try {
+        if (typeof document !== 'undefined') {
+            const textNode = document.createTextNode(unsafe);
+            const div = document.createElement('div');
+            div.appendChild(textNode);
+            return div.innerHTML;
+        } else { throw new Error("DOM not available"); }
+    } catch (e) {
+        console.warn("DOM escaping method failed, using basic regex replace.");
+        return String(unsafe).replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">").replace(/"/g, "\"").replace(/'/g, "'");
+    }
+}
+
+function ensureHttp(link: string): string {
+    if (!link || link === '#') return '#';
+    try {
+        if (/^(https?:\/\/|mailto:|tel:)/i.test(link)) return link;
+        if (link.includes('.') && !link.includes(' ') && !link.startsWith('/') && !link.startsWith('#') && !link.startsWith('//')) {
+            return `http://${link}`;
+        }
+        return link;
+    } catch (e) { return link; }
+}
+// --- End of ui.ts ---
+--- END FILE: src/ui.ts ---
+
+--- START FILE: src/utils.ts ---
+import { CountdownItem, RecurrenceInterval } from './models.js'; // Added .js
+
+// Basic unique ID generator
+export function generateId(): string {
+    return Date.now().toString(36) + Math.random().toString(36).substring(2, 9);
+}
+
+// Format remaining time
+export function formatTimeRemaining(ms: number): string {
+    if (ms <= 0) return "Now!";
+
+    const seconds = Math.floor((ms / 1000) % 60);
+    const minutes = Math.floor((ms / (1000 * 60)) % 60);
+    const hours = Math.floor((ms / (1000 * 60 * 60)) % 24);
+    const days = Math.floor(ms / (1000 * 60 * 60 * 24));
+
+    let parts: string[] = [];
+    if (days > 0) parts.push(`${days}d`);
+    if (hours > 0) parts.push(`${hours}h`);
+    if (minutes > 0) parts.push(`${minutes}m`);
+    // Always show seconds if less than a day for active timers, or if it's the only unit
+    if (days === 0 && (seconds > 0 || parts.length === 0)) {
+         parts.push(`${seconds}s`);
+    } else if (parts.length === 0 && seconds <= 0) {
+        // Handles edge case where calculated ms is slightly positive but seconds round down to 0
+        return "Now!";
+    }
+
+
+    return parts.join(' ');
+}
+
+// Format date for display
+export function formatDisplayDate(isoDateString: string): string {
+    try {
+        const date = new Date(isoDateString);
+         // Check if date is valid
+        if (isNaN(date.getTime())) {
+            console.error("Invalid date string for display:", isoDateString);
+            return "Invalid Date";
+        }
+        const options: Intl.DateTimeFormatOptions = {
+            year: 'numeric', month: 'short', day: 'numeric',
+            hour: 'numeric', minute: '2-digit', hour12: true
+        };
+        return date.toLocaleString(undefined, options); // Use browser's locale
+    } catch (e) {
+        console.error("Error formatting display date:", e);
+        return "Error Date";
+    }
+}
+
+// Format date and time for input fields
+export function formatDateTimeForInput(isoDateString: string): { date: string, time: string } {
+     try {
+        const date = new Date(isoDateString);
+        if (isNaN(date.getTime())) {
+            throw new Error("Invalid date for input formatting");
+        }
+        const year = date.getFullYear();
+        const month = (date.getMonth() + 1).toString().padStart(2, '0'); // Add 1 because months are 0-indexed
+        const day = date.getDate().toString().padStart(2, '0');
+        const hours = date.getHours().toString().padStart(2, '0');
+        const minutes = date.getMinutes().toString().padStart(2, '0');
+
+        return {
+            date: `${year}-${month}-${day}`,
+            time: `${hours}:${minutes}`
+        };
+    } catch(e) {
+         console.error("Error formatting date/time for input:", e);
+         // Return current date/time or empty strings as fallback
+         const now = new Date();
+         const year = now.getFullYear();
+         const month = (now.getMonth() + 1).toString().padStart(2, '0');
+         const day = now.getDate().toString().padStart(2, '0');
+         return { date: `${year}-${month}-${day}`, time: '12:00' }; // Default or empty
+    }
+}
+
+
+// Calculate the next occurrence date based on the *last* target date
+export function calculateNextOccurrence(lastTargetDateStr: string, interval: RecurrenceInterval): string | null {
+     try {
+        const lastTargetDate = new Date(lastTargetDateStr);
+        if (isNaN(lastTargetDate.getTime())) {
+             console.error("Invalid last target date for recurrence calc:", lastTargetDateStr);
+            return null;
+        }
+        let nextDate = new Date(lastTargetDate);
+
+        switch (interval) {
+            case 'daily':
+                nextDate.setDate(nextDate.getDate() + 1);
+                break;
+            case 'weekly':
+                nextDate.setDate(nextDate.getDate() + 7);
+                break;
+            case 'monthly':
+                nextDate.setMonth(nextDate.getMonth() + 1);
+                break;
+            case 'yearly':
+                nextDate.setFullYear(nextDate.getFullYear() + 1);
+                break;
+            default:
+                // Should not happen with TypeScript, but good practice
+                const exhaustiveCheck: never = interval;
+                console.error("Invalid recurrence interval:", exhaustiveCheck);
+                return null;
+        }
+        return nextDate.toISOString();
+    } catch (e) {
+        console.error("Error calculating next occurrence:", e);
+        return null;
+    }
+}
+
+
+// Checks if a recurring event should stop based on end date
+export function isRecurrenceFinished(nextDateStr: string | null, recurrenceEndDateStr: string | null | undefined): boolean {
+    if (!nextDateStr || !recurrenceEndDateStr) {
+        return false; // No end date or no valid next date means it continues
+    }
+    try {
+        const nextDate = new Date(nextDateStr);
+        const endDate = new Date(recurrenceEndDateStr);
+
+         if (isNaN(nextDate.getTime()) || isNaN(endDate.getTime())) {
+             console.error("Invalid date(s) for recurrence finished check:", nextDateStr, recurrenceEndDateStr);
+             return true; // Treat as finished if dates are invalid to prevent infinite loops
+         }
+
+        // Compare the *start* of the day for robustness unless specific times matter
+        nextDate.setHours(0, 0, 0, 0);
+        endDate.setHours(0, 0, 0, 0);
+
+        // If the next occurrence date is *strictly after* the end date, it's finished.
+        return nextDate > endDate;
+    } catch (e) {
+        console.error("Error checking recurrence finished:", e);
+        return true; // Treat as finished on error
+    }
+}
+--- END FILE: src/utils.ts ---
+
+--- START FILE: src/app.ts ---
+import { CountdownItem, CountdownFormData } from './models.js';
+import { loadItems, saveItems, exportItems, importItems } from './storage.js';
+// Make sure listContainer is exported from ui.ts if you use the ID-based reorder strategy
+import { setupUIEventListeners, renderCountdownList, updateTimers, openModal, applyTheme, listContainer } from './ui.js';
+import { generateId, calculateNextOccurrence, isRecurrenceFinished } from './utils.js';
+
+// --- Application State ---
+let countdownItems: CountdownItem[] = [];
+let timerInterval: number | null = null;
+const THEME_STORAGE_KEY = 'finalCountdownTheme'; // Key for saving theme
+
+// --- Initialization ---
+function initializeApp(): void {
+    console.log("Initializing Final Countdown App v2.3 (with D&D)..."); // Updated version log
+    countdownItems = loadItems();
+    console.log(`Loaded ${countdownItems.length} items.`);
+
+    // Load and apply saved theme
+    const savedTheme = localStorage.getItem(THEME_STORAGE_KEY) || 'default';
+    console.log('Applying saved theme on load:', savedTheme);
+    applyTheme(savedTheme); // Apply theme visually via UI function
+
+    // Setup UI listeners, INCLUDING the new orderChanged handler
+    setupUIEventListeners({
+        saveItem: handleSaveItem,
+        deleteItem: handleDeleteItem,
+        requestEditItem: handleEditRequest,
+        requestCopyItem: handleCopyRequest,
+        updateFilter: handleFilterChange,
+        exportItems: handleExport,
+        importItems: handleImport,
+        themeChanged: handleThemeChange,
+        orderChanged: handleOrderChange // <-- Add the handler here
+    });
+
+    renderCountdownList(countdownItems); // Render the initial list
+    startTimerUpdates(); // Start the 1-second interval timer
+    checkPastEvents(true); // Run initial check for past/recurring events
+    console.log("App initialized with theme:", savedTheme);
+}
+
+// --- Core Logic Handlers ---
+
+function handleSaveItem(formData: CountdownFormData, editingId: string | null): void {
+    try {
+        // Log received formData more completely if possible
+        console.log("APP handleSaveItem - Received formData:", JSON.stringify(formData)); // Stringify to see all fields
+
+        if (editingId) {
+            // --- Update existing item ---
+            const itemIndex = countdownItems.findIndex(item => item.id === editingId);
+            if (itemIndex === -1) {
+                 console.error(`Item with ID ${editingId} not found for update.`);
+                 alert("Error: Could not find the item to update.");
+                 return;
+            }
+            const originalItem = countdownItems[itemIndex];
+
+            // Create updated item object - explicitly map all form fields
+            const updatedItem: CountdownItem = {
+                // Start with ONLY values that DON'T come from the form
+                id: originalItem.id,
+                createdAt: originalItem.createdAt,
+                originalTargetDate: originalItem.originalTargetDate, // Keep original unless logic changes it
+
+                // Explicitly map ALL fields from formData
+                name: formData.name,
+                targetDate: new Date(formData.targetDateTime).toISOString(),
+                isRecurring: formData.isRecurring,
+                recurrenceInterval: formData.isRecurring ? formData.recurrenceInterval : undefined,
+                recurrenceEndDate: formData.isRecurring && formData.recurrenceEndDate ? new Date(formData.recurrenceEndDate).toISOString() : null,
+                category: formData.category,
+                note: formData.note,
+                link: formData.link,
+                design: formData.design,
+                customColor: formData.customColor, // *** Explicitly map customColor ***
+                // Calculate isPast based on the potentially new targetDate
+                isPast: new Date(formData.targetDateTime) <= new Date(),
+            };
+
+             // --- Clear undefined recurrence fields if not recurring ---
+             if (!updatedItem.isRecurring) {
+                 updatedItem.recurrenceInterval = undefined;
+                 updatedItem.recurrenceEndDate = null;
+             }
+
+            // --- Handle recurrence advancement if necessary ---
+            if (updatedItem.isPast && updatedItem.isRecurring) {
+                const nextDate = getNextValidOccurrence(updatedItem);
+                if (nextDate) {
+                    updatedItem.targetDate = nextDate;
+                    updatedItem.isPast = new Date(updatedItem.targetDate) <= new Date();
+                } else {
+                     updatedItem.isPast = true;
+                }
+            } else if (!updatedItem.isPast && new Date(updatedItem.targetDate) < new Date()){
+                 updatedItem.isPast = true;
+            }
+
+            // --- Log the final updated item before saving ---
+            console.log("APP handleSaveItem - Final updatedItem object:", JSON.stringify(updatedItem)); // Stringify
+
+            countdownItems[itemIndex] = updatedItem;
+            console.log("Updated item in array:", countdownItems[itemIndex].name);
+
+        } else {
+             // --- Add new item (logic seems okay from logs, but ensure customColor is passed) ---
+             const newItem: CountdownItem = {
+                 id: generateId(),
+                 name: formData.name,
+                 targetDate: new Date(formData.targetDateTime).toISOString(),
+                 originalTargetDate: new Date(formData.targetDateTime).toISOString(),
+                 isRecurring: formData.isRecurring,
+                 recurrenceInterval: formData.isRecurring ? formData.recurrenceInterval : undefined,
+                 recurrenceEndDate: formData.isRecurring && formData.recurrenceEndDate ? new Date(formData.recurrenceEndDate).toISOString() : null,
+                 category: formData.category,
+                 note: formData.note,
+                 link: formData.link,
+                 design: formData.design,
+                 customColor: formData.customColor, // Assign color from formData
+                 createdAt: new Date().toISOString(),
+                 isPast: new Date(formData.targetDateTime) <= new Date()
+             };
+
+             if (newItem.isPast && newItem.isRecurring) {
+                 const nextDate = getNextValidOccurrence(newItem);
+                 if (nextDate) {
+                     newItem.targetDate = nextDate;
+                     newItem.isPast = new Date(newItem.targetDate) <= new Date();
+                 }
+             }
+             console.log("APP handleSaveItem - New item object:", JSON.stringify(newItem)); // Stringify
+             countdownItems.push(newItem);
+             console.log("Added new item:", newItem.name);
+        }
+
+        // Save changes and update UI
+        saveItems(countdownItems);
+        console.log("APP handleSaveItem - Rendering list after save...");
+        renderCountdownList(countdownItems);
+
+    } catch (e) {
+        console.error("Error saving item:", e);
+        alert(`Error saving item: ${e instanceof Error ? e.message : 'An unknown error occurred.'}`);
+    }
+}
+
+function handleEditRequest(id: string): void {
+    const item = countdownItems.find(i => i.id === id);
+    if (item) {
+        openModal('edit', id, item);
+    } else {
+        console.error(`Item with ID ${id} not found for editing.`);
+        alert("Error: Item not found for editing.");
+    }
+}
+
+function handleCopyRequest(id: string): void {
+    const item = countdownItems.find(i => i.id === id);
+    if (item) {
+        // Pass undefined for itemId to ensure it's treated as a new item ('add' mode)
+        openModal('add', undefined, item);
+    } else {
+         console.error(`Item with ID ${id} not found for copying.`);
+         alert("Error: Item not found for copying.");
+    }
+}
+
+function handleDeleteItem(id: string): void {
+     const itemIndex = countdownItems.findIndex(item => item.id === id);
+     if (itemIndex === -1) {
+         alert("Error: Item not found for deletion.");
+         return;
+     }
+     const itemToDelete = countdownItems[itemIndex];
+     // Use item name in confirmation for better user experience
+     if (confirm(`Are you sure you want to delete "${itemToDelete.name || 'this item'}"?`)) {
+         countdownItems.splice(itemIndex, 1); // Remove item from array
+         saveItems(countdownItems); // Save the updated array
+         renderCountdownList(countdownItems); // Re-render the list
+         console.log("Deleted item:", id);
+     }
+}
+
+// This handler now mainly triggers a re-render, as the filter state is managed in ui.ts
+function handleFilterChange(newFilter: string): void {
+    console.log("Filter changed to:", newFilter);
+    renderCountdownList(countdownItems); // Re-render with the filter applied by ui.ts
+}
+
+function handleExport(): void {
+    if (countdownItems.length === 0) {
+        alert("Nothing to export!");
+        return;
+    }
+    exportItems(countdownItems);
+}
+
+function handleImport(file: File): void {
+    importItems(file, (importedItems) => {
+        if (!importedItems) { // Handle potential null return on error
+            alert("Import failed. Could not read file data.");
+            return;
+        }
+        if (importedItems.length === 0 && file.size > 0) {
+            alert("Import Warning: No valid countdown items found in the selected file.");
+            return;
+        }
+         if (importedItems.length === 0 && file.size === 0) {
+            alert("Import failed: The selected file is empty.");
+            return;
+        }
+
+        // Confirm replacement
+        if (confirm(`Import ${importedItems.length} item(s)? This will REPLACE your current list.`)) {
+            countdownItems = importedItems; // Replace current items
+            checkPastEvents(true); // Check state of newly imported items
+            saveItems(countdownItems); // Save the new list
+            renderCountdownList(countdownItems); // Render the new list
+            alert("Import successful!");
+            console.log(`Imported ${importedItems.length} items.`);
+        }
+    });
+}
+
+// Handler for Theme Change (Save preference)
+function handleThemeChange(newTheme: string): void {
+    console.log('handleThemeChange called with:', newTheme);
+    try {
+        localStorage.setItem(THEME_STORAGE_KEY, newTheme);
+        console.log("Theme preference saved:", newTheme);
+    } catch (e) {
+        console.error("Error saving theme preference to localStorage:", e);
+        alert("Could not save theme preference. LocalStorage might be disabled or full.");
+    }
+}
+
+// --- NEW: Handler for Drag-and-Drop Reordering ---
+function handleOrderChange(itemId: string, oldVisualIndex: number, newVisualIndex: number): void {
+    console.log(`App logic: Moving item ${itemId} visually from ${oldVisualIndex} to ${newVisualIndex}`);
+
+    // --- ID-based Reordering Strategy (More robust with filtering) ---
+
+    const itemToMove = countdownItems.find(item => item.id === itemId);
+    if (!itemToMove) {
+        console.error(`ORDER CHANGE ERROR: Could not find moved item with ID ${itemId} in main items array.`);
+        // Might force a re-render to sync UI if state is corrupted
+        renderCountdownList(countdownItems);
+        return;
+    }
+
+    // 1. Remove the item from its current position in the main array
+    const currentActualIndex = countdownItems.findIndex(item => item.id === itemId);
+    if (currentActualIndex > -1) {
+        countdownItems.splice(currentActualIndex, 1);
+    } else {
+        console.error(`ORDER CHANGE ERROR: Item ${itemId} found but couldn't determine its current index in main array?`);
+        renderCountdownList(countdownItems); // Re-render to potentially fix
+        return;
+    }
+
+    // 2. Determine the actual index where the item should be inserted in the main array.
+    // We need to map the visual index (newVisualIndex) back to an index in the full `countdownItems` array.
+    // This is tricky because the visual list might be filtered/sorted differently.
+    // A common approach is to find the ID of the item *before* which the moved item was dropped visually.
+
+    // Get the current visual list elements AFTER SortableJS has updated the DOM
+    const currentListElements = listContainer?.querySelectorAll('.countdown-item');
+    if (!currentListElements || currentListElements.length !== listContainer?.children.length) {
+         console.error("ORDER CHANGE ERROR: Could not reliably get current DOM elements for reordering.");
+         // Put item back at the end as a fallback, save and re-render
+         countdownItems.push(itemToMove);
+         saveItems(countdownItems);
+         renderCountdownList(countdownItems);
+         return;
+    }
+
+    let insertBeforeActualIndex = -1;
+    if (newVisualIndex < currentListElements.length) {
+         // Find the element that is NOW at the target visual index
+        const elementAtNewIndex = currentListElements[newVisualIndex];
+        const idAtNewIndex = elementAtNewIndex.getAttribute('data-id');
+        if (idAtNewIndex) {
+            // Find where this element currently is in our main data array
+            insertBeforeActualIndex = countdownItems.findIndex(item => item.id === idAtNewIndex);
+        }
+    }
+
+    // 3. Insert the moved item back into the main array
+    if (insertBeforeActualIndex !== -1) {
+        // Insert before the item that was visually after the drop position
+        countdownItems.splice(insertBeforeActualIndex, 0, itemToMove);
+    } else {
+        // If we couldn't find the item to insert before (e.g., dragged to the very end,
+        // or error finding ID), append the moved item to the end of the array.
+        countdownItems.push(itemToMove);
+    }
+
+    // 4. Persist the new order
+    console.log("Saving new item order...");
+    saveItems(countdownItems);
+    // 5. **Crucially, DO NOT re-render immediately here.**
+    // SortableJS has already updated the DOM visually. Re-rendering now based
+    // on the array might cause a flicker or fight with SortableJS's animations.
+    // The *next* time `renderCountdownList` is called (e.g., filter change, add/delete,
+    // timer update causing state change), it will use the correctly ordered array.
+}
+
+
+// --- Periodic Updates & State Checks ---
+function checkPastEvents(forceRender: boolean = false): boolean {
+    let itemsChanged = false;
+    const now = new Date();
+
+    countdownItems.forEach(item => {
+        // Skip if already marked as past or if targetDate is invalid
+        if (item.isPast || !item.targetDate) return;
+
+        const targetDate = new Date(item.targetDate);
+        if (isNaN(targetDate.getTime())) {
+            console.warn(`Invalid date found for item ${item.id}: ${item.targetDate}. Marking as past.`);
+            item.isPast = true; // Mark invalid items as past to prevent errors
+            itemsChanged = true;
+            return;
+        }
+
+        // Check if target date is now in the past
+        if (targetDate <= now) {
+            if (item.isRecurring && item.recurrenceInterval) {
+                // Try to calculate the next occurrence
+                const nextOccurrence = calculateNextOccurrence(item.targetDate, item.recurrenceInterval);
+
+                if (nextOccurrence && !isRecurrenceFinished(nextOccurrence, item.recurrenceEndDate)) {
+                    // Update to the next valid occurrence
+                    item.targetDate = nextOccurrence;
+                    // Re-check if the *new* targetDate is past (could happen with short intervals)
+                    item.isPast = new Date(item.targetDate) <= now;
+                } else {
+                    // No valid next occurrence or recurrence finished
+                    item.isPast = true;
+                }
+            } else {
+                // Not recurring, simply mark as past
+                item.isPast = true;
+            }
+            itemsChanged = true; // Mark that state changed
+        }
+    });
+
+    // If any item's state changed, save the updated list
+    if (itemsChanged) {
+        console.log("Item state changed (past/recurring). Saving...");
+        saveItems(countdownItems);
+        // Re-render ONLY if forced or if it's deemed necessary by the caller
+        if (forceRender) {
+            renderCountdownList(countdownItems);
+        }
+    }
+    return itemsChanged; // Return whether any item's state changed
+}
+
+// Helper to find the first valid future occurrence for a recurring item
+function getNextValidOccurrence(item: CountdownItem): string | null {
+    let currentDate = item.originalTargetDate || item.targetDate; // Start from original if available, else current
+    const now = new Date();
+
+    // Check validity and recurrence settings
+    if (!item.isRecurring || !item.recurrenceInterval) return null;
+    if (!currentDate) return null; // Need a starting date
+
+    let loopGuard = 0; // Prevent infinite loops with bad data/logic
+    const MAX_LOOPS = 1000; // Look ahead a reasonable amount
+
+    // Ensure the initial date isn't invalid
+     if(isNaN(new Date(currentDate).getTime())) {
+         console.error(`Invalid start date "${currentDate}" for recurrence calculation on item ${item.id}`);
+         return null;
+     }
+
+    // Calculate occurrences until we find one in the future or the recurrence ends
+    while (new Date(currentDate) <= now && loopGuard < MAX_LOOPS) {
+        const next = calculateNextOccurrence(currentDate, item.recurrenceInterval);
+        // Check if recurrence finished or calculation failed
+        if (!next || isRecurrenceFinished(next, item.recurrenceEndDate)) {
+            return null; // No valid future occurrence
+        }
+        currentDate = next; // Move to the next calculated date
+        loopGuard++;
+    }
+
+    if (loopGuard >= MAX_LOOPS) {
+        console.warn(`Recurrence calculation exceeded MAX_LOOPS for item ${item.id}. Returning null.`);
+        return null;
+    }
+
+    // Return the first occurrence found that is after 'now'
+    return new Date(currentDate) > now ? currentDate : null;
+}
+
+
+function startTimerUpdates(): void {
+    if (timerInterval) {
+        clearInterval(timerInterval); // Clear existing interval if any
+    }
+    console.log("Starting timer updates (interval: 1000ms)...");
+    timerInterval = window.setInterval(() => {
+        // 1. Check if any items became past or need recurrence update
+        const stateChanged = checkPastEvents();
+        // 2. Update the displayed time remaining for all active timers
+        updateTimers(countdownItems);
+        // 3. Re-render the entire list *only if* an item's state actually changed (past/recurring)
+        if (stateChanged) {
+            console.log("Re-rendering list due to state change.");
+            renderCountdownList(countdownItems);
+        }
+    }, 1000); // Update every second
+}
+
+// --- Initialize ---
+// Use DOMContentLoaded to ensure the DOM is fully parsed before running the app
+document.addEventListener('DOMContentLoaded', initializeApp);
+
+// --- End of app.ts ---
+--- END FILE: src/app.ts ---
+
+--- START FILE: src/storage.ts ---
+import { CountdownItem } from './models.js'; // Added .js
+
+const STORAGE_KEY = 'finalCountdownItems';
+
+// Helper to parse and validate items, ensuring dates are valid
+function parseAndValidateItems(jsonString: string): CountdownItem[] {
+    const parsedData = JSON.parse(jsonString);
+
+    if (!Array.isArray(parsedData)) {
+        throw new Error("Stored data is not an array.");
+    }
+
+    const validatedItems: CountdownItem[] = [];
+    const now = new Date();
+
+    parsedData.forEach((item: any, index: number) => {
+        // Basic structure check
+        if (!item || typeof item !== 'object' || !item.id || !item.name || !item.targetDate) {
+            console.warn(`Skipping invalid item at index ${index} during load:`, item);
+            return;
+        }
+
+        // Date validation
+        const targetDate = new Date(item.targetDate);
+        const originalTargetDate = item.originalTargetDate ? new Date(item.originalTargetDate) : targetDate;
+        const createdAt = item.createdAt ? new Date(item.createdAt) : now;
+        const recurrenceEndDate = item.recurrenceEndDate ? new Date(item.recurrenceEndDate) : null;
+
+        if (isNaN(targetDate.getTime())) {
+            console.warn(`Skipping item with invalid targetDate at index ${index}:`, item.id, item.targetDate);
+            return;
+        }
+         if (isNaN(originalTargetDate.getTime())) {
+             console.warn(`Invalid originalTargetDate for item ${item.id}, using targetDate.`);
+             item.originalTargetDate = item.targetDate; // Fallback
+         }
+         if (isNaN(createdAt.getTime())) {
+              console.warn(`Invalid createdAt for item ${item.id}, using current time.`);
+             item.createdAt = now.toISOString(); // Fallback
+         }
+          if (recurrenceEndDate && isNaN(recurrenceEndDate.getTime())) {
+             console.warn(`Invalid recurrenceEndDate for item ${item.id}, setting to null.`);
+             item.recurrenceEndDate = null; // Clear invalid date
+         }
+
+
+        // Reconstruct with defaults and calculate isPast
+        validatedItems.push({
+            id: String(item.id),
+            name: String(item.name),
+            targetDate: targetDate.toISOString(),
+            originalTargetDate: originalTargetDate.toISOString(),
+            isRecurring: !!item.isRecurring,
+            recurrenceInterval: item.recurrenceInterval || undefined,
+            recurrenceEndDate: recurrenceEndDate ? recurrenceEndDate.toISOString() : null,
+            category: String(item.category || 'Uncategorized'),
+            note: String(item.note || ''),
+            link: String(item.link || ''),
+            design: item.design || 'default',
+            createdAt: createdAt.toISOString(),
+            isPast: targetDate < now // Calculate isPast based on current time
+        });
+    });
+    return validatedItems;
+}
+
+
+export function loadItems(): CountdownItem[] {
+    const storedData = localStorage.getItem(STORAGE_KEY);
+    if (storedData) {
+        try {
+            return parseAndValidateItems(storedData);
+        } catch (e) {
+            console.error("Error parsing localStorage data:", e);
+            // Optionally backup corrupted data before removing
+            // localStorage.setItem(STORAGE_KEY + '_backup_' + Date.now(), storedData);
+            localStorage.removeItem(STORAGE_KEY); // Clear corrupted data
+            return [];
+        }
+    }
+    return [];
+}
+
+export function saveItems(items: CountdownItem[]): void {
+    try {
+        // Ensure isPast isn't saved (it's derived on load/update)
+        const itemsToSave = items.map(({ isPast, ...rest }) => rest);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(itemsToSave));
+    } catch (e) {
+         console.error("Error saving items to localStorage:", e);
+         // Consider notifying the user if storage fails (e.g., quota exceeded)
+         alert("Error saving data! Your changes might not be persisted. LocalStorage might be full.");
+    }
+}
+
+// Function to get a single item by ID (useful for editing/copying)
+export function getItemById(id: string): CountdownItem | undefined {
+    const items = loadItems(); // Load fresh data
+    return items.find(item => item.id === id);
+}
+
+
+export function exportItems(items: CountdownItem[]): void {
+    // Use the clean data passed in, no need to load again
+    const itemsToExport = items.map(({ isPast, ...rest }) => rest); // Remove transient isPast flag
+    const dataStr = JSON.stringify(itemsToExport, null, 2); // Pretty print JSON
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `final_countdown_backup_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url); // Clean up blob URL
+}
+
+export function importItems(file: File, callback: (items: CountdownItem[]) => void): void {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        try {
+            const json = event.target?.result as string;
+            if (!json) {
+                throw new Error("File content is empty or unreadable.");
+            }
+            // Use the same validation logic as loadItems
+            const importedAndValidatedItems = parseAndValidateItems(json);
+            callback(importedAndValidatedItems); // Pass validated items back to app
+
+        } catch (error) {
+            console.error("Error importing file:", error);
+            alert(`Import failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+    };
+    reader.onerror = () => {
+        console.error("Error reading file:", reader.error);
+        alert("Error reading file.");
+    };
+    reader.readAsText(file);
+}
+--- END FILE: src/storage.ts ---
+
+--- START FILE: src/models.ts ---
+export type RecurrenceInterval = 'daily' | 'weekly' | 'monthly' | 'yearly';
+export type TimerDesign = 'default' | 'compact' | 'card';
+
+export interface CountdownItem {
+    id: string;               // Unique identifier
+    name: string;             // Event name
+    targetDate: string;       // ISO 8601 string for the *next* occurrence
+    originalTargetDate: string; // The very first target date set by the user
+    isRecurring: boolean;
+    recurrenceInterval?: RecurrenceInterval;
+    recurrenceEndDate?: string | null; // ISO 8601 string or null
+    category: string;         // Category name (e.g., "TV Shows", "Life Events")
+    note?: string;
+    link?: string;
+    design: TimerDesign;      // Visual style identifier
+    createdAt: string;        // ISO 8601 string when item was created
+    isPast: boolean;          // Flag if the current targetDate has passed
+    customColor?: string; 
+
+}
+
+// Data structure for form values, useful for passing data around
+export interface CountdownFormData {
+    name: string;
+    targetDateTime: string; // Combined date and time ISO string or similar input format
+    isRecurring: boolean;
+    recurrenceInterval?: RecurrenceInterval;
+    recurrenceEndDate?: string | null;
+    category: string;
+    note?: string;
+    link?: string;
+    design: TimerDesign;
+    customColor?: string; 
+
+}
+--- END FILE: src/models.ts ---
+
+--- START FILE: package.json ---
+{
+  "name": "final-countdown",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}
+--- END FILE: package.json ---
+
+--- START FILE: codeabase.txt ---
+--- END FILE: codeabase.txt ---
+
